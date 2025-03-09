@@ -1,3 +1,4 @@
+// FILE: lexer.h
 #pragma once
 
 enum
@@ -5,15 +6,51 @@ enum
 	ID
 	// keywords
 	,
-	TYPE_CHAR
+	TYPE_CHAR,
+	TYPE_DOUBLE,
+	ELSE,
+	IF,
+	TYPE_INT,
+	RETURN,
+	STRUCT,
+	VOID,
+	WHILE,
+
+	// constants
+	INT,
+	DOUBLE,
+	CHAR,
+	STRING,
+
 	// delimiters
-	,
+
 	COMMA,
-	END
+	SEMICOLON,
+	LPAR,
+	RPAR,
+	LBRACKET,
+	RBRACKET,
+	LACC,
+	RACC,
+	END,
+
 	// operators
-	,
+	ADD,
+	SUB,
+	MUL,
+	DIV,
+	DOT,
+	AND,
+	OR,
+	NOT,
 	ASSIGN,
-	EQUAL
+	EQUAL,
+	NOTEQ,
+	LESS,
+	LESSEQ,
+	GREATER,
+	GREATEREQ
+
 };
 
 typedef struct Token
@@ -29,6 +66,10 @@ typedef struct Token
 	};
 	struct Token *next; // next token in a simple linked list
 } Token;
+
+extern Token *tokens;
+extern Token *lastTk;
+extern int line;
 
 Token *tokenize(const char *pch);
 void showTokens(const Token *tokens);

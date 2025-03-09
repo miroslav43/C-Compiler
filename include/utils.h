@@ -1,5 +1,6 @@
-// requires at least C11
-// in Visual Studio it is set from Properties -> C/C++ -> C Language Standard
+// FILE: Utils.h
+//  requires at least C11
+//  in Visual Studio it is set from Properties -> C/C++ -> C Language Standard
 #pragma once
 
 #include <stddef.h>
