@@ -342,6 +342,116 @@ void showTokens(const Token *tokens)
 {
 	for (const Token *tk = tokens; tk; tk = tk->next)
 	{
-		printf("%d\n", tk->code);
+		printf("%d - %s", tk->line, getTokenName(tk->code));
+
+		switch (tk->code)
+		{
+		case ID:
+		case STRING:
+			printf(": %s", tk->text);
+			break;
+		case INT:
+			printf(": %d", tk->i);
+			break;
+		case DOUBLE:
+			printf(": %f", tk->d);
+			break;
+		case CHAR:
+			printf(": %c", tk->c);
+			break;
+
+		default:
+			break;
+		}
+		printf("\n");
+	}
+}
+
+const char *getTokenName(int token)
+{
+	switch (token)
+	{
+	case ID:
+		return "ID";
+	// keywords
+	case TYPE_CHAR:
+		return "TYPE_CHAR";
+	case TYPE_DOUBLE:
+		return "TYPE_DOUBLE";
+	case ELSE:
+		return "ELSE";
+	case IF:
+		return "IF";
+	case TYPE_INT:
+		return "TYPE_INT";
+	case RETURN:
+		return "RETURN";
+	case STRUCT:
+		return "STRUCT";
+	case VOID:
+		return "VOID";
+	case WHILE:
+		return "WHILE";
+	// constants
+	case INT:
+		return "INT";
+	case DOUBLE:
+		return "DOUBLE";
+	case CHAR:
+		return "CHAR";
+	case STRING:
+		return "STRING";
+	// delimiters
+	case COMMA:
+		return "COMMA";
+	case SEMICOLON:
+		return "SEMICOLON";
+	case LPAR:
+		return "LPAR";
+	case RPAR:
+		return "RPAR";
+	case LBRACKET:
+		return "LBRACKET";
+	case RBRACKET:
+		return "RBRACKET";
+	case LACC:
+		return "LACC";
+	case RACC:
+		return "RACC";
+	case END:
+		return "END";
+	// operators
+	case ADD:
+		return "ADD";
+	case SUB:
+		return "SUB";
+	case MUL:
+		return "MUL";
+	case DIV:
+		return "DIV";
+	case DOT:
+		return "DOT";
+	case AND:
+		return "AND";
+	case OR:
+		return "OR";
+	case NOT:
+		return "NOT";
+	case ASSIGN:
+		return "ASSIGN";
+	case EQUAL:
+		return "EQUAL";
+	case NOTEQ:
+		return "NOTEQ";
+	case LESS:
+		return "LESS";
+	case LESSEQ:
+		return "LESSEQ";
+	case GREATER:
+		return "GREATER";
+	case GREATEREQ:
+		return "GREATEREQ";
+	default:
+		return "UNKNOWN_TOKEN";
 	}
 }
