@@ -10,8 +10,6 @@ Token *tokens = NULL;
 Token *lastTk = NULL;
 int line = 1;
 
-// adds a token to the end of the tokens list and returns it
-// sets its code and line
 
 Token *addTk(int code)
 {
