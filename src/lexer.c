@@ -10,7 +10,6 @@ Token *tokens = NULL;
 Token *lastTk = NULL;
 int line = 1;
 
-
 Token *addTk(int code)
 {
 	Token *tk = safeAlloc(sizeof(Token));
@@ -42,33 +41,24 @@ Token *tokenize(const char *pch)
 {
 	const char *start;
 	Token *tk;
-
-	while (*pch)
+	for (;;)
 	{
-		if (*pch == ' ' || *pch == '\t')
-		{
-			pch++;
-			continue;
-		}
-		if (*pch == '\r' || *pch == '\n')
-		{
-			if (*pch == '\r' && pch[1] == '\n')
-				pch++;
-			line++;
-			pch++;
-			continue;
-		}
-
-		if (*pch == '/' && pch[1] == '/')
-		{
-			pch += 2;
-			while (*pch && *pch != '\n' && *pch != '\r')
-				pch++;
-			continue;
-		}
-
 		switch (*pch)
 		{
+		case ' ':
+		case '\t':
+			pch++;
+			break;
+		case '\r':
+			if (pch[1] == '\n')
+				pch++;
+		case '\n':
+			line++;
+			pch++;
+			break;
+		case '\0':
+			addTk(END);
+			return tokens;
 		case ',':
 			addTk(COMMA);
 			pch++;
@@ -113,13 +103,22 @@ Token *tokenize(const char *pch)
 			addTk(MUL);
 			pch++;
 			break;
-		case '/':
-			addTk(DIV);
-			pch++;
-			break;
 		case '.':
 			addTk(DOT);
 			pch++;
+			break;
+		case '/':
+			if (pch[1] == '/')
+			{
+				pch += 2;
+				while (*pch && *pch != '\n' && *pch != '\r')
+					pch++;
+			}
+			else
+			{
+				addTk(DIV);
+				pch++;
+			}
 			break;
 		case '!':
 			if (pch[1] == '=')
@@ -177,7 +176,7 @@ Token *tokenize(const char *pch)
 			}
 			else
 			{
-				err("invalid character: %c", *pch);
+				err("invalid character: %c (expected && operator)", *pch);
 			}
 			break;
 		case '|':
@@ -188,21 +187,35 @@ Token *tokenize(const char *pch)
 			}
 			else
 			{
-				err("invalid character: %c", *pch);
+				err("invalid character: %c (expected || operator)", *pch);
 			}
 			break;
 		case '\"':
 		{
 			pch++;
 			start = pch;
+			int length = 0;
 			while (*pch && *pch != '\"')
 			{
-				pch++;
+				if (*pch == '\\' && pch[1])
+				{
+					pch += 2;
+					length += 2;
+				}
+				else
+				{
+					pch++;
+					length++;
+				}
+				if (length > 1000)
+				{
+					err("string literal too long (over 1000 characters) at line %d", line);
+				}
 			}
+
 			if (*pch != '\"')
-			{
-				err("unterminated string literal");
-			}
+				err("unterminated string literal at line %d", line);
+
 			char *str = extract(start, pch);
 			tk = addTk(STRING);
 			tk->text = str;
@@ -210,36 +223,57 @@ Token *tokenize(const char *pch)
 			break;
 		}
 		case '\'':
-		{
 			pch++;
-			if (*pch == '\0' || *pch == '\'')
-			{
-				err("empty character literal");
-			}
-			char ch = *pch;
+			if (*pch || *pch == '\'')
+				err("empty character literal at line %d", line);
+
 			pch++;
 			if (*pch != '\'')
-			{
-				err("unterminated character literal");
-			}
+				err("unterminated character literal at line %d, expected ' after %c", line, *pch-1);
 			tk = addTk(CHAR);
-			tk->c = ch;
+			tk->c = *pch;
 			pch++;
+
 			break;
-		}
 		default:
 			if (isdigit(*pch))
 			{
 				start = pch;
+				int digitCount = 0;
 				while (isdigit(*pch))
+				{
 					pch++;
+					digitCount++;
+				}
+
+				if (digitCount > 10)
+				{
+					err("integer literal too large (over 10 digits) at line %d", line);
+				}
+
 				int isDouble = 0;
-				if (*pch == '.')
+				if (*pch == '.') // 10E+3   //3.e
 				{
 					isDouble = 1;
 					pch++;
-					while (isdigit(*pch))
-						pch++;
+					if (isdigit(*pch))
+					{
+						int fractionalDigits = 0;
+						while (isdigit(*pch))
+						{
+							pch++;
+							fractionalDigits++;
+						}
+
+						if (fractionalDigits > 10)
+						{
+							err("fractional part too large (over 10 digits) at line %d", line);
+						}
+					}
+					else
+					{
+						err("expected digits after decimal point at line %d", line);
+					}
 				}
 				if (*pch == 'e' || *pch == 'E')
 				{
@@ -248,9 +282,19 @@ Token *tokenize(const char *pch)
 					if (*pch == '+' || *pch == '-')
 						pch++;
 					if (!isdigit(*pch))
-						err("invalid exponent in number");
+						err("invalid exponent in number at line %d - expected digits after 'e' or 'E'", line);
+
+					int exponentDigits = 0;
 					while (isdigit(*pch))
+					{
 						pch++;
+						exponentDigits++;
+					}
+
+					if (exponentDigits > 5)
+					{
+						err("exponent too large (over 5 digits) at line %d", line);
+					}
 				}
 				char *numStr = extract(start, pch);
 				if (isDouble)
@@ -264,15 +308,23 @@ Token *tokenize(const char *pch)
 					tk->i = atoi(numStr);
 				}
 				free(numStr);
-				break;
 			}
 			else if (isalpha(*pch) || *pch == '_')
 			{
 				start = pch;
+				int identifierLength = 0;
 				while (isalnum(*pch) || *pch == '_')
+				{
 					pch++;
-				char *idStr = extract(start, pch);
+					identifierLength++;
+				}
 
+				if (identifierLength > 255)
+				{
+					err("identifier too long (over 255 characters) at line %d", line);
+				}
+
+				char *idStr = extract(start, pch);
 				if (strcmp(idStr, "char") == 0)
 				{
 					addTk(TYPE_CHAR);
@@ -323,19 +375,15 @@ Token *tokenize(const char *pch)
 					tk = addTk(ID);
 					tk->text = idStr;
 				}
-				break;
 			}
 			else
 			{
-				err("invalid character: %c", *pch);
+				err("invalid character: %c (ASCII: %d) at line %d", *pch, *pch, line);
 			}
+			break;
 		}
 	}
-
-	addTk(END);
-	return tokens;
 }
-
 void showTokens(const Token *tokens)
 {
 	for (const Token *tk = tokens; tk; tk = tk->next)
@@ -371,7 +419,6 @@ const char *getTokenName(int token)
 	{
 	case ID:
 		return "ID";
-	// keywords
 	case TYPE_CHAR:
 		return "TYPE_CHAR";
 	case TYPE_DOUBLE:
@@ -390,7 +437,6 @@ const char *getTokenName(int token)
 		return "VOID";
 	case WHILE:
 		return "WHILE";
-	// constants
 	case INT:
 		return "INT";
 	case DOUBLE:
@@ -399,7 +445,6 @@ const char *getTokenName(int token)
 		return "CHAR";
 	case STRING:
 		return "STRING";
-	// delimiters
 	case COMMA:
 		return "COMMA";
 	case SEMICOLON:
@@ -418,7 +463,6 @@ const char *getTokenName(int token)
 		return "RACC";
 	case END:
 		return "END";
-	// operators
 	case ADD:
 		return "ADD";
 	case SUB:

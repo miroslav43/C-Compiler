@@ -1,34 +1,21 @@
-// FILE: testlex.c
-// Program de testare a analizorului lexical, v1.1
+// program de testare a analizorului lexical, v1.1
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "../include/lexer.h"
-#include "../include/utils.h"
-
-int main(int argc, char *argv[])
+int main()
 {
-	if (argc < 2)
+	int i;
+	i = 0;
+	while (i < 10)
 	{
-		fprintf(stderr, "Usage: %s <source_file>\n", argv[0]);
-		return 1;
+		if (i / 2 == 1)
+			puti(i);
+		i = i + 1;
 	}
+	if (4.9 == 49e-1 && 0.49E1 == 2.45 * 2.0)
+		puts("yes");
+	putc('#');
+	puts(""); // pentru \n
 
-	char *source = loadFile(argv[1]);
-	if (source == NULL)
-	{
-		fprintf(stderr, "Could not load file: %s\n", argv[1]);
-		return 1;
-	}
-
-	tokens = NULL;
-	lastTk = NULL;
-	line = 1;
-
-	Token *tkList = tokenize(source);
-	showTokens(tkList);
-
-	free(source);
+	// double a= 2.e3;
 
 	return 0;
 }
