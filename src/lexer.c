@@ -229,7 +229,7 @@ Token *tokenize(const char *pch)
 
 			pch++;
 			if (*pch != '\'')
-				err("unterminated character literal at line %d, expected ' after %c", line, *pch-1);
+				err("unterminated character literal at line %d, expected ' after %c", line, *pch - 1);
 			tk = addTk(CHAR);
 			tk->c = *pch;
 			pch++;

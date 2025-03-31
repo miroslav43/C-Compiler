@@ -2,23 +2,23 @@
 
 int main()
 {
-    //Error: unterminated string
-    // char *str = "This string is not terminated;
+    // Error: unterminated string
+    //  char *str = "This string is not terminated;
 
-    //Error: invalid character in string
-    // char *str2 = "Contains control character: ;
+    // Error: invalid character in string
+    //  char *str2 = "Contains control character: ;
 
-    //Error: invalid suffix on number
-    // int x = 123a;
+    // Error: invalid suffix on number
+    //  int x = 123a;
 
     // // Error: unterminated character literal
     // char c = 'a;
 
-    //Error: empty character literal
-    // char c2 = '';
+    // Error: empty character literal
+    //  char c2 = '';
 
-    //Error: integer overflow
-    // int big = 99999999999;
+    // Error: integer overflow
+    //  int big = 99999999999;
 
     // // Error: invalid exponent
 
