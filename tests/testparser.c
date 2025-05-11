@@ -3,6 +3,7 @@ struct Pt
 	int x;
 	int y;
 };
+
 struct Pt points[10];
 
 double max(double a, double b)
@@ -15,8 +16,8 @@ double max(double a, double b)
 
 int len(char s[])
 {
-	int i;
-	i = 0;
+	int i ;
+	i = 5;
 	while (s[i])
 		i = i + 1;
 	return i;

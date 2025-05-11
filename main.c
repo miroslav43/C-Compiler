@@ -1,10 +1,12 @@
 // FILE: main.c
-// Program for lexical analysis using test files from tests directory
+// Program for lexical and syntax analysis using test files from tests directory
 
 #include <stdio.h>
 #include <stdlib.h>
 #include "include/lexer.h"
 #include "include/utils.h"
+#include "include/parser.h"
+#include "include/ad.h"
 
 int main(int argc, char *argv[])
 {
@@ -36,8 +38,21 @@ int main(int argc, char *argv[])
     Token *tkList = tokenize(source);
     showTokens(tkList);
 
-    free(source);
+    // Create global domain in the symbol table before parsing
+    pushDomain();
 
+    // Perform syntax analysis with domain analysis
+    printf("\nStarting syntax analysis...\n");
+    parse(tkList);
+    printf("Syntax analysis completed successfully.\n");
+
+    // Display the content of the global domain
+    showDomain(symTable, "global");
+
+    // Remove the global domain
+    dropDomain();
+
+    free(source);
 
     return 0;
 }
