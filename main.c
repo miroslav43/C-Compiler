@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "include/lexer.h"
 #include "include/utils.h"
 #include "include/parser.h"
@@ -10,16 +11,26 @@
 
 int main(int argc, char *argv[])
 {
-    char *inputFile;
+    char *inputFile = NULL;
+    int useTableDisplay = 0;
 
-    if (argc < 2)
+    // Process command line arguments
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-t") == 0)
+        {
+            useTableDisplay = 1;
+        }
+        else if (inputFile == NULL)
+        {
+            inputFile = argv[i];
+        }
+    }
+
+    if (inputFile == NULL)
     {
         inputFile = "tests/testlex.c";
         printf("No input file specified. Using default: %s\n", inputFile);
-    }
-    else
-    {
-        inputFile = argv[1];
     }
 
     char *source = loadFile(inputFile);
@@ -47,7 +58,16 @@ int main(int argc, char *argv[])
     printf("Syntax analysis completed successfully.\n");
 
     // Display the content of the global domain
-    showDomain(symTable, "global");
+    if (useTableDisplay)
+    {
+        printf("\nDisplaying domain analysis in table format:\n");
+        showDomainTable(symTable, "global");
+    }
+    else
+    {
+        printf("\nDisplaying standard domain analysis:\n");
+        showDomain(symTable, "global");
+    }
 
     // Remove the global domain
     dropDomain();

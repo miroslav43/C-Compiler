@@ -49,7 +49,8 @@ enum
 	LESS,
 	LESSEQ,
 	GREATER,
-	GREATEREQ
+	GREATEREQ,
+	ADDR // Address-of operator &
 
 };
 

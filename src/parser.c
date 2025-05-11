@@ -56,21 +56,37 @@ bool arrayDecl(Type *t)
 
 bool typeBase(Type *t)
 {
-	t->n = -1; // Not an array by default
+	t->n = -1;		  // Not an array by default
+	t->isPtr = false; // Not a pointer by default
 
 	if (consume(TYPE_INT))
 	{
 		t->tb = TB_INT;
+		// Check for pointer types (int*)
+		if (consume(MUL))
+		{
+			t->isPtr = true;
+		}
 		return true;
 	}
 	if (consume(TYPE_DOUBLE))
 	{
 		t->tb = TB_DOUBLE;
+		// Check for pointer types (double*)
+		if (consume(MUL))
+		{
+			t->isPtr = true;
+		}
 		return true;
 	}
 	if (consume(TYPE_CHAR))
 	{
 		t->tb = TB_CHAR;
+		// Check for pointer types (char*)
+		if (consume(MUL))
+		{
+			t->isPtr = true;
+		}
 		return true;
 	}
 	if (consume(STRUCT))
@@ -82,6 +98,12 @@ bool typeBase(Type *t)
 			t->s = findSymbol(tkName->text);
 			if (!t->s)
 				tkerr("structura nedefinita: %s", tkName->text);
+
+			// Check for pointer types (struct X*)
+			if (consume(MUL))
+			{
+				t->isPtr = true;
+			}
 			return true;
 		}
 		else
@@ -516,7 +538,7 @@ bool exprCast()
 
 bool exprUnary()
 {
-	if (consume(SUB) || consume(NOT))
+	if (consume(SUB) || consume(NOT) || consume(ADDR))
 	{
 		if (!exprUnary())
 			tkerr("expected expression after unary operator");

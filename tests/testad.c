@@ -32,13 +32,3 @@ void f(struct S1 p)
 {
 	puti(p.i);
 }
-
-
-int main()
-{
-	int k;
-	
-	k = 10;
-	puti(k);
-	return 0;
-}

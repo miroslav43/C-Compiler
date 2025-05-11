@@ -29,7 +29,6 @@ TEST_PARSER = $(TESTDIR)/testparser.c
 TEST_LEXER = $(TESTDIR)/testlex.c
 TEST_ERROR = $(TESTDIR)/error_test.c
 TEST_DOMAIN = $(TESTDIR)/testad.c
-TEST_DOMAIN_ERRORS = $(TESTDIR)/test_domain_errors.c
 
 # Test executables
 TEST_PARSER_BIN = $(TESTBINDIR)/test_parser
@@ -38,7 +37,7 @@ TEST_ERROR_BIN = $(TESTBINDIR)/test_error
 TEST_DOMAIN_BIN = $(TESTBINDIR)/test_domain
 
 # Primary targets
-.PHONY: all clean test test_lexer test_parser test_error test_domain test_domain_errors help
+.PHONY: all clean test test_lexer test_parser test_error test_domain domain help
 
 # Default target: build everything
 all: directories $(TARGET) test_bins
@@ -117,16 +116,20 @@ test_domain: $(TARGET)
 	@echo "=== Running domain analysis test ==="
 	$(TARGET) $(TEST_DOMAIN)
 
-test_domain_errors: $(TARGET)
-	@echo "=== Running domain analysis error test ==="
-	$(TARGET) $(TEST_DOMAIN_ERRORS) || echo "Error detected as expected"
+test_domain_standard: $(TARGET)
+	@echo "=== Running domain analysis with standard output ==="
+	$(TARGET) $(TEST_DOMAIN)
+
+test_domain_table: $(TARGET)
+	@echo "=== Running domain analysis with table output ==="
+	$(TARGET) $(TEST_DOMAIN) -t
 
 # Run all tests
 test: test_lexer test_parser test_error test_domain
 	@echo "=== All tests completed ==="
 
 # Domain analysis tests
-domain: test_domain test_domain_errors
+domain: test_domain_standard test_domain_table
 	@echo "=== Domain analysis tests completed ==="
 
 # Clean build artifacts
@@ -154,7 +157,8 @@ docs:
 	@echo "- \`make test_lexer\` - Run lexer tests" >> README.md
 	@echo "- \`make test_parser\` - Run basic parser tests" >> README.md
 	@echo "- \`make test_domain\` - Run domain analysis tests" >> README.md
-	@echo "- \`make test_domain_errors\` - Run domain analysis error tests" >> README.md
+	@echo "- \`make test_domain_standard\` - Run domain analysis with standard output" >> README.md
+	@echo "- \`make test_domain_table\` - Run domain analysis with table display" >> README.md
 	@echo "- \`make domain\` - Run all domain analysis tests" >> README.md
 	@echo "- \`make test\` - Run all tests" >> README.md
 	@echo "" >> README.md
@@ -178,8 +182,9 @@ help:
 	@echo "  make test_lexer     - Run lexer test (tests/testlex.c)"
 	@echo "  make test_parser    - Run parser test (tests/testparser.c)"
 	@echo "  make test_error     - Run error test (tests/error_test.c)"
-	@echo "  make test_domain    - Run domain analysis test (tests/test_domain.c)"
-	@echo "  make test_domain_errors - Run domain analysis error test (tests/test_domain_errors.c)"
+	@echo "  make test_domain    - Run domain analysis test (tests/testad.c)"
+	@echo "  make test_domain_standard - Run domain analysis with standard output"
+	@echo "  make test_domain_table    - Run domain analysis with table display"
 	@echo "  make domain         - Run all domain analysis tests"
 	@echo "  make test           - Run all tests"
 	@echo ""

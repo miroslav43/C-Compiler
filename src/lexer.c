@@ -176,7 +176,8 @@ Token *tokenize(const char *pch)
 			}
 			else
 			{
-				err("invalid character: %c (expected && operator)", *pch);
+				addTk(ADDR);
+				pch++;
 			}
 			break;
 		case '|':
@@ -493,6 +494,8 @@ const char *getTokenName(int token)
 		return "GREATER";
 	case GREATEREQ:
 		return "GREATEREQ";
+	case ADDR:
+		return "ADDR";
 	default:
 		return "UNKNOWN_TOKEN";
 	}

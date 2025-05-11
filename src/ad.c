@@ -21,7 +21,7 @@ int typeBaseSize(Type *t)
 	case TB_VOID:
 		return 0;
 	default:
-	{ // TB_STRUCT
+	{ 
 		int size = 0;
 		for (Symbol *m = t->s->structMembers; m; m = m->next)
 		{
@@ -34,6 +34,8 @@ int typeBaseSize(Type *t)
 
 int typeSize(Type *t)
 {
+	if (t->isPtr)
+		return sizeof(void *);
 	if (t->n < 0)
 		return typeBaseSize(t);
 	if (t->n == 0)
@@ -41,7 +43,6 @@ int typeSize(Type *t)
 	return t->n * typeBaseSize(t);
 }
 
-// free from memory a list of symbols
 void freeSymbols(Symbol *list)
 {
 	for (Symbol *next; list; list = next)
@@ -54,7 +55,6 @@ void freeSymbols(Symbol *list)
 Symbol *newSymbol(const char *name, SymKind kind)
 {
 	Symbol *s = (Symbol *)safeAlloc(sizeof(Symbol));
-	// sets all the fields to 0/NULL
 	memset(s, 0, sizeof(Symbol));
 	s->name = name;
 	s->kind = kind;
@@ -69,7 +69,6 @@ Symbol *dupSymbol(Symbol *symbol)
 	return s;
 }
 
-// s->next is already NULL from newSymbol
 Symbol *addSymbolToList(Symbol **list, Symbol *s)
 {
 	Symbol *iter = *list;
@@ -110,7 +109,6 @@ void freeSymbol(Symbol *s)
 		freeSymbols(s->structMembers);
 		break;
 	case SK_PARAM:
-		// Nothing to free for parameters
 		break;
 	}
 	free(s);
@@ -152,6 +150,10 @@ void showNamedType(Type *t, const char *name)
 	default: // TB_STRUCT
 		printf("struct %s", t->s->name);
 	}
+
+	if (t->isPtr)
+		printf("*");
+
 	if (name)
 		printf(" %s", name);
 	if (t->n == 0)
@@ -224,6 +226,155 @@ void showDomain(Domain *d, const char *name)
 		showSymbol(s);
 	}
 	puts("\n");
+}
+
+// Return a string representation of TypeBase
+const char *typeBaseToString(TypeBase tb)
+{
+	switch (tb)
+	{
+	case TB_INT:
+		return "int";
+	case TB_DOUBLE:
+		return "double";
+	case TB_CHAR:
+		return "char";
+	case TB_VOID:
+		return "void";
+	case TB_STRUCT:
+		return "struct";
+	default:
+		return "unknown";
+	}
+}
+
+const char *symKindToString(SymKind kind)
+{
+	switch (kind)
+	{
+	case SK_VAR:
+		return "variable";
+	case SK_PARAM:
+		return "parameter";
+	case SK_FN:
+		return "function";
+	case SK_STRUCT:
+		return "struct";
+	default:
+		return "unknown";
+	}
+}
+
+void formatSymbolType(Type *t, char *buffer, int bufferSize)
+{
+	char typeStr[256] = "";
+
+	if (t->tb == TB_STRUCT && t->s)
+	{
+		snprintf(typeStr, sizeof(typeStr), "struct %s", t->s->name);
+	}
+	else
+	{
+		snprintf(typeStr, sizeof(typeStr), "%s", typeBaseToString(t->tb));
+	}
+
+	if (t->isPtr)
+	{
+		char pointerType[300];
+		snprintf(pointerType, sizeof(pointerType), "%s*", typeStr);
+		strcpy(typeStr, pointerType);
+	}
+
+	if (t->n == 0)
+	{
+		snprintf(buffer, bufferSize, "%s[]", typeStr);
+	}
+	else if (t->n > 0)
+	{
+		snprintf(buffer, bufferSize, "%s[%d]", typeStr, t->n);
+	}
+	else
+	{
+		snprintf(buffer, bufferSize, "%s", typeStr);
+	}
+}
+
+// Display domain analysis in table format
+void showDomainTable(Domain *d, const char *name)
+{
+	printf("\n╔══════════════════════════════════════════════════════════════════╗\n");
+	printf("║                    DOMAIN ANALYSIS: %-25s   ║\n", name);
+	printf("╠══════════════════╦══════════════╦═══════════╦═══════════╦═════════╣\n");
+	printf("║ Name             ║ Kind         ║ Type      ║ Size      ║ Scope   ║\n");
+	printf("╠══════════════════╬══════════════╬═══════════╬═══════════╬═════════╣\n");
+
+	for (Symbol *s = d->symbols; s; s = s->next)
+	{
+		char typeStr[100];
+		char scopeStr[100] = "global";
+		char sizeStr[50];
+
+		// Format type
+		formatSymbolType(&s->type, typeStr, sizeof(typeStr));
+
+		// Determine scope
+		if (s->owner)
+		{
+			if (s->owner->kind == SK_FN)
+			{
+				snprintf(scopeStr, sizeof(scopeStr), "fn: %s", s->owner->name);
+			}
+			else if (s->owner->kind == SK_STRUCT)
+			{
+				snprintf(scopeStr, sizeof(scopeStr), "struct: %s", s->owner->name);
+			}
+		}
+
+		// Format size
+		int size = typeSize(&s->type);
+		snprintf(sizeStr, sizeof(sizeStr), "%d bytes", size);
+
+		// Print table row
+		printf("║ %-16s ║ %-12s ║ %-9s ║ %-9s ║ %-7s ║\n",
+			   s->name,
+			   symKindToString(s->kind),
+			   typeStr,
+			   sizeStr,
+			   scopeStr);
+
+		// Special formatting for structs or functions
+		if (s->kind == SK_STRUCT)
+		{
+			printf("╠══════════════════╬══════════════╬═══════════╬═══════════╬═════════╣\n");
+			printf("║   Members:                                                       ║\n");
+			for (Symbol *m = s->structMembers; m; m = m->next)
+			{
+				char memberTypeStr[100];
+				formatSymbolType(&m->type, memberTypeStr, sizeof(memberTypeStr));
+				printf("║   %-14s ║ %-12s ║ %-9s ║ %-9d ║         ║\n",
+					   m->name,
+					   "member",
+					   memberTypeStr,
+					   typeSize(&m->type));
+			}
+		}
+		else if (s->kind == SK_FN)
+		{
+			printf("╠══════════════════╬══════════════╬═══════════╬═══════════╬═════════╣\n");
+			printf("║   Parameters:                                                    ║\n");
+			for (Symbol *p = s->fn.params; p; p = p->next)
+			{
+				char paramTypeStr[100];
+				formatSymbolType(&p->type, paramTypeStr, sizeof(paramTypeStr));
+				printf("║   %-14s ║ %-12s ║ %-9s ║ %-9d ║         ║\n",
+					   p->name,
+					   "param",
+					   paramTypeStr,
+					   typeSize(&p->type));
+			}
+		}
+	}
+	printf("╚══════════════════╩══════════════╩═══════════╩═══════════╩═════════╝\n\n");
 }
 
 Symbol *findSymbolInDomain(Domain *d, const char *name)
