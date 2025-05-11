@@ -5,23 +5,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include "include/lexer.h"
-#include "include/utils.h"
 #include "include/parser.h"
 #include "include/ad.h"
+#include "include/analiza_tipuri.h"
+#include "include/utils.h"
 
 int main(int argc, char *argv[])
 {
+    int showTable = 0; // Flag for table format display
     char *inputFile = NULL;
-    int useTableDisplay = 0;
 
     // Process command line arguments
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-t") == 0)
         {
-            useTableDisplay = 1;
+            showTable = 1;
         }
-        else if (inputFile == NULL)
+        else
         {
             inputFile = argv[i];
         }
@@ -29,50 +30,74 @@ int main(int argc, char *argv[])
 
     if (inputFile == NULL)
     {
-        inputFile = "tests/testlex.c";
-        printf("No input file specified. Using default: %s\n", inputFile);
+        printf("Usage: %s [-t] <source_file>\n", argv[0]);
+        printf("  -t   Show domain analysis in table format\n");
+        exit(1);
     }
 
+    // Load file content
     char *source = loadFile(inputFile);
     if (source == NULL)
     {
-        fprintf(stderr, "Could not load file: %s\n", inputFile);
-        return 1;
+        printf("Cannot open file %s\n", inputFile);
+        exit(1);
     }
 
     printf("Analyzing file: %s\n", inputFile);
 
-    tokens = NULL;
-    lastTk = NULL;
-    line = 1;
+    // Tokenize the source
+    Token *tokens = tokenize(source);
 
-    Token *tkList = tokenize(source);
-    showTokens(tkList);
+    // Print tokens if not running the type analysis tests
+    if (strstr(inputFile, "testat.c") == NULL)
+    {
+        showTokens(tokens);
+    }
 
-    // Create global domain in the symbol table before parsing
-    pushDomain();
+    // Initialize domain analysis
+    pushDomain(); // Create global domain
 
-    // Perform syntax analysis with domain analysis
+    // Register external functions used in test files
+    Type intType = {TB_INT, NULL, -1, false};
+    Type doubleType = {TB_DOUBLE, NULL, -1, false};
+    Type charType = {TB_CHAR, NULL, -1, false};
+    Type voidType = {TB_VOID, NULL, -1, false};
+    Type stringType = {TB_CHAR, NULL, 0, false}; // char[] type for strings
+
+    Symbol *putiSym = addExtFn("puti", (void (*)())puti, voidType);
+    addFnParam(putiSym, "i", intType);
+
+    Symbol *putsSym = addExtFn("puts", (void (*)())puts1, voidType);
+    addFnParam(putsSym, "s", stringType);
+
+    Symbol *putcSym = addExtFn("putc", (void (*)())putc1, voidType);
+    addFnParam(putcSym, "c", charType);
+
+    Symbol *putdSym = addExtFn("putd", (void (*)())putd, voidType);
+    addFnParam(putdSym, "d", doubleType);
+
+    // Run parser
     printf("\nStarting syntax analysis...\n");
-    parse(tkList);
+    parse(tokens);
     printf("Syntax analysis completed successfully.\n");
 
-    // Display the content of the global domain
-    if (useTableDisplay)
+    // Show domain analysis results if not running type analysis tests
+    if (strstr(inputFile, "testat.c") == NULL)
     {
-        printf("\nDisplaying domain analysis in table format:\n");
-        showDomainTable(symTable, "global");
-    }
-    else
-    {
-        printf("\nDisplaying standard domain analysis:\n");
-        showDomain(symTable, "global");
+        if (showTable)
+        {
+            showDomainTable(symTable, "global");
+        }
+        else
+        {
+            showDomain(symTable, "global");
+        }
     }
 
-    // Remove the global domain
-    dropDomain();
-
+    // Cleanup
+    dropDomain(); // Remove global domain
     free(source);
 
+    printf("Compilation successful!\n");
     return 0;
 }

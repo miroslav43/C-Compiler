@@ -225,16 +225,18 @@ Token *tokenize(const char *pch)
 		}
 		case '\'':
 			pch++;
-			if (*pch || *pch == '\'')
+			if (!*pch || *pch == '\'')
 				err("empty character literal at line %d", line);
 
-			pch++;
-			if (*pch != '\'')
-				err("unterminated character literal at line %d, expected ' after %c", line, *pch - 1);
-			tk = addTk(CHAR);
-			tk->c = *pch;
+			char charValue = *pch;
 			pch++;
 
+			if (*pch != '\'')
+				err("unterminated character literal at line %d, expected ' after %c", line, charValue);
+
+			tk = addTk(CHAR);
+			tk->c = charValue;
+			pch++;
 			break;
 		default:
 			if (isdigit(*pch))

@@ -39,3 +39,24 @@ char *loadFile(const char *fileName)
 	buf[n] = '\0';
 	return buf;
 }
+
+// Helper printing functions for tests
+void puti(int i)
+{
+	printf("%d\n", i);
+}
+
+void puts1(const char *s)
+{
+	printf("%s\n", s);
+}
+
+void putc1(char c)
+{
+	printf("%c\n", c);
+}
+
+void putd(double d)
+{
+	printf("%f\n", d);
+}

@@ -2,7 +2,7 @@
 
 # Compiler and compiler flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -I $(INCDIR)
 LDFLAGS = 
 
 # Directories
@@ -37,7 +37,7 @@ TEST_ERROR_BIN = $(TESTBINDIR)/test_error
 TEST_DOMAIN_BIN = $(TESTBINDIR)/test_domain
 
 # Primary targets
-.PHONY: all clean test test_lexer test_parser test_error test_domain domain help
+.PHONY: all clean test test_lexer test_parser test_error test_domain domain help test_analiza test_clean docs
 
 # Default target: build everything
 all: directories $(TARGET) test_bins
@@ -58,46 +58,46 @@ test_bins: $(TEST_PARSER_BIN) $(TEST_LEXER_BIN) $(TEST_ERROR_BIN) $(TEST_DOMAIN_
 # Compile the main.c file
 $(MAIN_OBJ): $(MAIN_SRC)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile object files from source files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Special object files for test programs (to avoid name conflicts)
 $(OBJDIR)/test_parser.o: $(TEST_PARSER)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/test_lexer.o: $(TEST_LEXER)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/test_error.o: $(TEST_ERROR)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/test_domain.o: $(TEST_DOMAIN)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build test executables
 $(TEST_PARSER_BIN): $(MAIN_OBJ) $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
 
 $(TEST_LEXER_BIN): $(MAIN_OBJ) $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
 
 $(TEST_ERROR_BIN): $(MAIN_OBJ) $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
 
 $(TEST_DOMAIN_BIN): $(MAIN_OBJ) $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -I$(INCDIR) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(MAIN_OBJ) $(OBJECTS) $(LDFLAGS)
 
 # Run test programs
 test_parser: $(TEST_PARSER_BIN)
@@ -124,6 +124,18 @@ test_domain_table: $(TARGET)
 	@echo "=== Running domain analysis with table output ==="
 	$(TARGET) $(TEST_DOMAIN) -t
 
+# Type analysis tests
+test_analiza: $(TARGET)
+	@echo "Running type analysis tests..."
+	./$(TARGET) tests/testat.c || true
+	@echo "Analysis test done."
+
+test_clean:
+	@echo "Running type analysis with a clean test file..."
+	sed -i.bak '25,35d' tests/testat.c
+	./$(TARGET) tests/testat.c
+	mv tests/testat.c.bak tests/testat.c
+
 # Run all tests
 test: test_lexer test_parser test_error test_domain
 	@echo "=== All tests completed ==="
@@ -144,7 +156,7 @@ docs:
 	@echo "# AtomC Compiler" > README.md
 	@echo "" >> README.md
 	@echo "## Description" >> README.md
-	@echo "AtomC is a simple C-like language compiler that includes a lexical analyzer, parser, and domain analyzer." >> README.md
+	@echo "AtomC is a simple C-like language compiler that includes a lexical analyzer, parser, domain analyzer, and type analyzer." >> README.md
 	@echo "" >> README.md
 	@echo "## Building" >> README.md
 	@echo "To build the compiler and test programs:" >> README.md
@@ -159,6 +171,8 @@ docs:
 	@echo "- \`make test_domain\` - Run domain analysis tests" >> README.md
 	@echo "- \`make test_domain_standard\` - Run domain analysis with standard output" >> README.md
 	@echo "- \`make test_domain_table\` - Run domain analysis with table display" >> README.md
+	@echo "- \`make test_analiza\` - Run type analysis tests with intentional errors" >> README.md
+	@echo "- \`make test_clean\` - Run type analysis on a clean test file" >> README.md
 	@echo "- \`make domain\` - Run all domain analysis tests" >> README.md
 	@echo "- \`make test\` - Run all tests" >> README.md
 	@echo "" >> README.md
@@ -168,26 +182,3 @@ docs:
 	@echo "./bin/atomc path/to/source/file.c" >> README.md
 	@echo "\`\`\`" >> README.md
 	@echo "Documentation generated."
-
-# Show help message
-help:
-	@echo "AtomC Compiler - Makefile Help"
-	@echo "============================="
-	@echo ""
-	@echo "Build targets:"
-	@echo "  make                - Build everything (compiler and test programs)"
-	@echo "  make clean          - Remove all build artifacts"
-	@echo ""
-	@echo "Test targets:"
-	@echo "  make test_lexer     - Run lexer test (tests/testlex.c)"
-	@echo "  make test_parser    - Run parser test (tests/testparser.c)"
-	@echo "  make test_error     - Run error test (tests/error_test.c)"
-	@echo "  make test_domain    - Run domain analysis test (tests/testad.c)"
-	@echo "  make test_domain_standard - Run domain analysis with standard output"
-	@echo "  make test_domain_table    - Run domain analysis with table display"
-	@echo "  make domain         - Run all domain analysis tests"
-	@echo "  make test           - Run all tests"
-	@echo ""
-	@echo "Documentation:"
-	@echo "  make docs           - Generate project documentation"
-	@echo "  make help           - Display this help message"
