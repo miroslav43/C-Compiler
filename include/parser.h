@@ -2,7 +2,7 @@
 
 #include "lexer.h"
 #include "ad.h"
-#include "analiza_tipuri.h"
+#include "at.h"
 #include <stdbool.h>
 
 void parse(Token *tokens);

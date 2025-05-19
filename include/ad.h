@@ -28,15 +28,13 @@ typedef struct
 	//		n>0 - array with specified dimension: double v[10]
 	int n;
 
-	// isPtr - indicates if this is a pointer type (e.g., int* or struct Point*)
 	bool isPtr;
 } Type;
 
-// returns the size of type t in bytes
 int typeSize(Type *t);
 
 typedef enum
-{ // symbol's kind
+{ 
 	SK_VAR,
 	SK_PARAM,
 	SK_FN,

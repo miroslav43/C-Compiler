@@ -1,0 +1,137 @@
+# Implementare Analiză de Tipuri pentru Compilatorul AtomC
+
+## Introducere
+
+Acest document descrie implementarea analizei de tipuri (AT) în compilatorul AtomC, conform cerinţelor din Activitatea 5. Analiza de tipuri verifică dacă expresiile și instrucțiunile respectă regulile semantice specifice limbajului AtomC.
+
+## Specificul limbajului AtomC
+
+AtomC este o versiune simplificată a limbajului C, cu următoarele particularități:
+- Nu are pointeri expliciți, dar vectorii fără dimensiune (ex: int v[]) pot fi folosiți pentru transferul adreselor
+- Nu există aritmetică de pointeri pentru vectori
+- Vectorii pot fi folosiți doar pentru indexare sau în apelurile de funcții
+
+## Structura fundamentală: Ret
+
+Toată analiza de tipuri se bazează pe structura Ret definită în at.h:
+
+```c
+typedef struct
+{
+    Type type; // tipul returnat de expresie
+    bool lval; // indică dacă este valoare stângă
+    bool ct;   // indică dacă este valoare constantă
+} Ret;
+```
+
+Această structură este utilizată pentru a urmări și verifica tipurile expresiilor în timpul analizei sintactice.
+
+## Funcții de bază pentru verificarea tipurilor
+
+Am implementat următoarele funcții de bază pentru verificarea tipurilor:
+
+1. `bool canBeScalar(Ret *r)` - verifică dacă un tip poate fi scalar (int, double, char)
+2. `bool convTo(Type *src, Type *dst)` - verifică dacă un tip sursă poate fi convertit la un tip destinație
+3. `bool arithTypeTo(Type *t1, Type *t2, Type *dst)` - determină tipul rezultat al unei operații aritmetice
+
+## Funcții specifice pentru fiecare regulă semantică
+
+Pentru fiecare regulă semantică specifică, am implementat funcții dedicate:
+
+1. `checkConditionType` - verifică dacă tipul unei condiții (în if/while) este scalar
+2. `checkReturnType` - verifică dacă expresia return este compatibilă cu tipul de return al funcției
+3. `checkCastTypes` - verifică compatibilitatea într-o conversie explicită de tip
+4. `checkArrayIndexing` - verifică dacă indexarea unui array este corectă
+5. `checkStructField` - verifică accesul la câmpurile unei structuri
+6. `checkLogicalOpTypes` - verifică tipurile operanzilor pentru operații logice
+7. `checkComparisonOpTypes` - verifică tipurile operanzilor pentru operații de comparație
+8. `checkArithmeticOpTypes` - verifică tipurile operanzilor pentru operații aritmetice
+
+Toate aceste funcții sunt declarate în at.h și implementate în at.c.
+
+## Integrarea cu analizorul sintactic
+
+Analiza de tipuri este integrată direct în analizorul sintactic recursiv-descendent. Pentru fiecare regulă sintactică care procesează expresii sau instrucțiuni, am adăugat cod pentru verificarea tipurilor:
+
+1. Fiecare funcție de analiză sintactică pentru expresii (exprAdd, exprMul, etc.) primește un parametru de tip Ret pentru a stoca informațiile despre tip.
+
+2. În timpul analizei, se colectează informația de tip pentru subexpresii și se verifică conformitatea cu regulile semantice.
+
+3. Se calculează și se returnează informația de tip pentru expresia curentă.
+
+De exemplu, în funcția `stm()`, verificăm că expresia dintr-o instrucțiune if este de tip scalar:
+
+```c
+if (expr(&rCond)) {
+    if (!checkConditionType(&rCond, "if"))
+        tkerr("the if condition must be a scalar value");
+    // ...
+}
+```
+
+## Tratarea recursivității la stânga
+
+Pentru regulile sintactice recursive la stânga, am distribuit regulile semantice conform algoritmului de eliminare a recursivității stângi:
+
+1. Ambele reguli rezultate (A și A') au aceiași parametri sintetizați și moșteniți.
+2. Regulile semantice din ramurile recursive se consideră în fragmentele alfa.
+3. Regulile semantice din ramurile nerecursive se consideră în fragmentele beta.
+
+De exemplu, pentru regula `exprOr`, implementarea lui `exprOrPrim` este:
+
+```c
+bool exprOrPrim(Ret* r) {
+    if (consume(OR)) {
+        Ret right;
+        if (exprAnd(&right)) {
+            Type tDst;
+            if (!arithTypeTo(&r->type, &right.type, &tDst))
+                tkerr(iTk, "invalid operand type for ||");
+            *r = (Ret){{TB_INT, NULL, -1}, false, true};
+            exprOrPrim(r);
+            return true;
+        } else 
+            tkerr(iTk, "invalid expression after ||");
+    }
+    return true;
+}
+```
+
+## Valori stânga și dreapta (left-value, right-value)
+
+Am implementat mecanisme pentru a distinge între valorile stânga (lval) și valorile dreapta (rval):
+
+- Valorile stânga (lval=true) au o adresă asociată și pot apărea în partea stângă a unei atribuiri
+- Valorile dreapta (lval=false) sunt doar valori și pot apărea doar în partea dreaptă
+
+În analizor, verificăm acest aspect în regula pentru atribuire:
+
+```c
+if (!rDst.lval)
+    tkerr("the assign destination must be a left-value");
+if (rDst.ct)
+    tkerr("the assign destination cannot be constant");
+```
+
+## Testarea analizei de tipuri
+
+Pentru testarea analizei de tipuri, am creat trei fișiere de test:
+
+1. `testat_clean.c` - cod corect din punct de vedere semantic, care nu generează erori
+2. `testat.c` - conține secțiuni comentate care pot fi activate pentru a testa diverse erori
+3. `testat2.c` - conține exemple explicite de încălcări ale regulilor semantice
+
+Fiecare test verifică implementarea corectă a regulilor semantice. De exemplu, pentru a testa regula "doar un array poate fi indexat", am folosit expresii ca `i[0]` (unde i este de tip int).
+
+## Tratarea erorilor
+
+Când se detectează o eroare de tip, analizorul generează un mesaj de eroare specific prin funcția `tkerr`. Mesajele sunt descriptive și indică exact care regulă semantică a fost încălcată, de exemplu:
+- "the if condition must be a scalar value"
+- "a void function cannot return a value"
+- "only an array can be indexed"
+
+## Concluzii
+
+Implementarea analizei de tipuri în compilatorul AtomC urmează un model atributiv, unde fiecare nod din arborele sintactic are asociate informații despre tipul său. Acest model permite verificarea regulilor semantice în timpul analizei sintactice, fără a necesita un pas separat de analiză.
+
+Arhitectura modulară, cu funcții specializate pentru fiecare tip de verificare, face codul ușor de înțeles și de extins. Testele comprehensive asigură că toate regulile semantice sunt verificate corect. 

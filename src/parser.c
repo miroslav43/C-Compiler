@@ -4,7 +4,7 @@
 #include "parser.h"
 #include "ad.h"
 #include "utils.h"
-#include "analiza_tipuri.h"
+#include "at.h"
 
 static Token *iTk;
 static Token *consumedTk;
@@ -44,7 +44,7 @@ bool arrayDecl(Type *t)
 		}
 		else
 		{
-			t->n = 0; // array without specified dimension: int v[]
+			t->n = 0;
 		}
 		if (consume(RBRACKET))
 			return true;
@@ -57,13 +57,12 @@ bool arrayDecl(Type *t)
 
 bool typeBase(Type *t)
 {
-	t->n = -1;		  // Not an array by default
-	t->isPtr = false; // Not a pointer by default
+	t->n = -1;
+	t->isPtr = false;
 
 	if (consume(TYPE_INT))
 	{
 		t->tb = TB_INT;
-		// Check for pointer types (int*)
 		if (consume(MUL))
 		{
 			t->isPtr = true;
@@ -73,7 +72,6 @@ bool typeBase(Type *t)
 	if (consume(TYPE_DOUBLE))
 	{
 		t->tb = TB_DOUBLE;
-		// Check for pointer types (double*)
 		if (consume(MUL))
 		{
 			t->isPtr = true;
@@ -83,7 +81,6 @@ bool typeBase(Type *t)
 	if (consume(TYPE_CHAR))
 	{
 		t->tb = TB_CHAR;
-		// Check for pointer types (char*)
 		if (consume(MUL))
 		{
 			t->isPtr = true;
@@ -100,7 +97,6 @@ bool typeBase(Type *t)
 			if (!t->s)
 				tkerr("structura nedefinita: %s", tkName->text);
 
-			// Check for pointer types (struct X*)
 			if (consume(MUL))
 			{
 				t->isPtr = true;
@@ -180,7 +176,6 @@ bool varDef()
 				break;
 			case SK_VAR:
 			case SK_PARAM:
-				// These cases don't own variables
 				break;
 			}
 		}
@@ -279,7 +274,7 @@ bool fnParam()
 			Token *tkName = consumedTk;
 			if (arrayDecl(&t))
 			{
-				t.n = 0; // Parameters with arrays have dimension 0
+				t.n = 0;
 			}
 
 			Symbol *param = findSymbolInDomain(symTable, tkName->text);
@@ -289,7 +284,6 @@ bool fnParam()
 			param->type = t;
 			param->owner = owner;
 			param->paramIdx = symbolsLen(owner->fn.params);
-			// Add parameter to both the current domain and function params
 			addSymbolToDomain(symTable, param);
 			addSymbolToList(&owner->fn.params, dupSymbol(param));
 
@@ -849,7 +843,7 @@ bool exprRelPrim(Ret *r)
 			opStr = ">=";
 			break;
 		default:
-			opStr = "?"; // Shouldn't happen
+			opStr = "?";
 		}
 
 		Ret right;

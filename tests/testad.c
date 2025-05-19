@@ -12,12 +12,15 @@ struct S1
 struct S1 p1;
 struct S1 vp[10];
 
+struct S1 p2;
+
 double sum(double x[5], int n)
 {
 	double r;
 	int i;
 	r = 0;
 	i = 0;
+	struct S1 a;
 	while (i < n)
 	{
 		double n;

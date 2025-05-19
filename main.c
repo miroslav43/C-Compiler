@@ -7,7 +7,7 @@
 #include "include/lexer.h"
 #include "include/parser.h"
 #include "include/ad.h"
-#include "include/analiza_tipuri.h"
+#include "include/at.h"
 #include "include/utils.h"
 
 int main(int argc, char *argv[])

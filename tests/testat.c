@@ -21,13 +21,3 @@ int h(int x, int y)
     }
     return 0;
 }
-
-int main()
-{
-    char c;
-    char arr[10];
-
-    c = arr;
-
-    return 0;
-}

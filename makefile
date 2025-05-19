@@ -37,7 +37,7 @@ TEST_ERROR_BIN = $(TESTBINDIR)/test_error
 TEST_DOMAIN_BIN = $(TESTBINDIR)/test_domain
 
 # Primary targets
-.PHONY: all clean test test_lexer test_parser test_error test_domain domain help test_analiza test_clean docs
+.PHONY: all clean test test_lexer test_parser test_error test_domain domain help test_analiza test_clean docs test_analiza2 test_analiza_clean test-vm
 
 # Default target: build everything
 all: directories $(TARGET) test_bins
@@ -130,6 +130,16 @@ test_analiza: $(TARGET)
 	./$(TARGET) tests/testat.c || true
 	@echo "Analysis test done."
 
+test_analiza2: $(TARGET)
+	@echo "Running type analysis tests on testat2.c..."
+	./$(TARGET) tests/testat2.c || true
+	@echo "Analysis test 2 done."
+
+test_analiza_clean: $(TARGET)
+	@echo "Running type analysis tests on clean test file..."
+	./$(TARGET) tests/testat_clean.c || true
+	@echo "Clean analysis test done."
+
 test_clean:
 	@echo "Running type analysis with a clean test file..."
 	sed -i.bak '25,35d' tests/testat.c
@@ -172,13 +182,13 @@ docs:
 	@echo "- \`make test_domain_standard\` - Run domain analysis with standard output" >> README.md
 	@echo "- \`make test_domain_table\` - Run domain analysis with table display" >> README.md
 	@echo "- \`make test_analiza\` - Run type analysis tests with intentional errors" >> README.md
-	@echo "- \`make test_clean\` - Run type analysis on a clean test file" >> README.md
-	@echo "- \`make domain\` - Run all domain analysis tests" >> README.md
-	@echo "- \`make test\` - Run all tests" >> README.md
-	@echo "" >> README.md
-	@echo "## Usage" >> README.md
-	@echo "To run the compiler on a source file:" >> README.md
-	@echo "\`\`\`bash" >> README.md
-	@echo "./bin/atomc path/to/source/file.c" >> README.md
-	@echo "\`\`\`" >> README.md
-	@echo "Documentation generated."
+	@echo "- \`make test_analiza2\` - Run type analysis tests on testat2.c" >> README.md
+	@echo "- \`make test_analiza_clean\` - Run type analysis tests on clean test file" >> README.md
+	@echo "- \`make test_clean\`
+
+# VM test target
+bin/tests/test_vm: bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o tests/test_vm.c
+	$(CC) -Wall -Wextra -g -I include -o bin/tests/test_vm bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o tests/test_vm.c
+
+test-vm: bin/tests/test_vm
+	./bin/tests/test_vm

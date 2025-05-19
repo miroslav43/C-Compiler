@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "utils.h"
-#include "ad.h"
+#include "../include/utils.h"
+#include "../include/ad.h"
 
 Domain *symTable = NULL;
 
@@ -147,7 +147,7 @@ void showNamedType(Type *t, const char *name)
 	case TB_VOID:
 		printf("void");
 		break;
-	default: // TB_STRUCT
+	default:
 		printf("struct %s", t->s->name);
 	}
 
@@ -222,13 +222,11 @@ void showDomain(Domain *d, const char *name)
 {
 	printf("// domain: %s\n", name);
 
-	// Array of external function names to filter out
 	const char *skipFunctions[] = {"puti", "puts", "putc", "putd"};
 	const int skipFunctionsCount = 4;
 
 	for (Symbol *s = d->symbols; s; s = s->next)
 	{
-		// Skip external utility functions
 		bool skip = false;
 		if (s->kind == SK_FN && s->fn.extFnPtr)
 		{
@@ -248,7 +246,6 @@ void showDomain(Domain *d, const char *name)
 	}
 }
 
-// Return a string representation of TypeBase
 const char *typeBaseToString(TypeBase tb)
 {
 	switch (tb)
@@ -319,7 +316,6 @@ void formatSymbolType(Type *t, char *buffer, int bufferSize)
 	}
 }
 
-// Display domain analysis in table format
 void showDomainTable(Domain *d, const char *name)
 {
 	printf("\n╔══════════════════════════════════════════════════════════════════╗\n");
@@ -328,13 +324,11 @@ void showDomainTable(Domain *d, const char *name)
 	printf("║ Name             ║ Kind         ║ Type      ║ Size      ║ Scope   ║\n");
 	printf("╠══════════════════╬══════════════╬═══════════╬═══════════╬═════════╣\n");
 
-	// Array of external function names to filter out
 	const char *skipFunctions[] = {"puti", "puts", "putc", "putd"};
 	const int skipFunctionsCount = 4;
 
 	for (Symbol *s = d->symbols; s; s = s->next)
 	{
-		// Skip external utility functions
 		bool skip = false;
 		if (s->kind == SK_FN && s->fn.extFnPtr)
 		{
@@ -350,7 +344,6 @@ void showDomainTable(Domain *d, const char *name)
 				continue;
 		}
 
-		// Rest of the code to show symbol info
 		char typeStr[50];
 		formatSymbolType(&s->type, typeStr, sizeof(typeStr));
 
