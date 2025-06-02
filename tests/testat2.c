@@ -43,7 +43,7 @@ int main()
     p.x = 1;
     p.y = 2;
     
-    // testIntReturn();
+    // testIntReturn(2,3,4,5);
     
     // // 1. IF - conditia trebuie sa fie scalar
     // if (p)

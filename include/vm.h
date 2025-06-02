@@ -67,6 +67,33 @@ typedef enum
 	OP_AND // logical and of 2 int values from stack
 	,
 	OP_CONV_F_I // converts double to int
+	,
+	// --- New instructions for code generation ---
+	OP_MUL_I // multiplies 2 int values from stack and puts the result on stack
+	,
+	OP_MUL_F // multiplies 2 double values from stack and puts the result on stack
+	,
+	OP_DIV_I // divides 2 int values from stack and puts the result on stack
+	,
+	OP_DIV_F // divides 2 double values from stack and puts the result on stack
+	,
+	OP_LOAD_I // loads int value from address on stack
+	,
+	OP_LOAD_F // loads double value from address on stack
+	,
+	OP_STORE_I // stores int value to address on stack
+	,
+	OP_STORE_F // stores double value to address on stack
+	,
+	OP_FPADDR_I // [idx] puts on stack the address FP+idx for int
+	,
+	OP_FPADDR_F // [idx] puts on stack the address FP+idx for double
+	,
+	OP_ADDR // [addr] puts address on stack
+	,
+	OP_NOP // no operation
+	,
+	OP_DROP // removes top value from stack
 } Opcode;
 
 typedef struct Instr Instr;
@@ -99,6 +126,15 @@ Instr *addInstrWithInt(Instr **list, Opcode op, int argVal);
 // add an instruction which has an argument of type double
 Instr *addInstrWithDouble(Instr **list, Opcode op, double argVal);
 
+// returns the last instruction in the list
+Instr *lastInstr(Instr *list);
+
+// deletes all instructions after the specified one
+void delInstrAfter(Instr *instr);
+
+// inserts a new instruction after the specified one
+Instr *insertInstr(Instr *after, Opcode op);
+
 // MV initialisation
 void vmInit();
 
@@ -113,6 +149,8 @@ Instr *genTestDoubleProgram();
 
 void put_i();
 void put_d();
+void puts1_wrapper();
+void putc1_wrapper();
 void pushf(double f);
 double popf();
 

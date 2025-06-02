@@ -1,0 +1,75 @@
+=== Running only the double function test ===
+Testing void f(double n) implementation...
+Program: f(2.0);
+void f(double n){
+    double i=0.0;
+    while(i<n){
+        put_d(i);
+        i=i+0.5;
+    }
+}
+
+gcc -Wall -Wextra -g -I include -o bin/tests/double_test bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o tests/double_test.c
+./bin/tests/double_test
+
+
+Running double test program (genTestDoubleProgram):
+0x155e060a0/0	PUSH.f	2
+0x155e05df0/1	CALL	0x155e06020
+0x155e06020/2	ENTER	1
+0x155e05f80/4	PUSH.f	0
+0x155e05fa0/5	FPSTORE	1	// i:0, f:0
+0x155e067e0/4	FPLOAD	1	// i:0, f:0
+0x155e06800/5	FPLOAD	-2	// i:0, f:2
+0x155e06820/6	LESS.f	// 0<2 -> 1
+0x155e06840/5	JF	0x155e06940	// 1
+0x155e06860/4	FPLOAD	1	// i:0, f:0
+0x155e06880/5	CALL_EXT	0x1046b893c
+=> 0
+0x155e068a0/4	FPLOAD	1	// i:0, f:0
+0x155e068c0/5	PUSH.f	0.5
+0x155e068e0/6	ADD.f	// 0+0.5 -> 0.5
+0x155e06900/5	FPSTORE	1	// i:0, f:0.5
+0x155e06920/4	JMP	0x155e067e0
+0x155e067e0/4	FPLOAD	1	// i:0, f:0.5
+0x155e06800/5	FPLOAD	-2	// i:0, f:2
+0x155e06820/6	LESS.f	// 0.5<2 -> 1
+0x155e06840/5	JF	0x155e06940	// 1
+0x155e06860/4	FPLOAD	1	// i:0, f:0.5
+0x155e06880/5	CALL_EXT	0x1046b893c
+=> 0.5
+0x155e068a0/4	FPLOAD	1	// i:0, f:0.5
+0x155e068c0/5	PUSH.f	0.5
+0x155e068e0/6	ADD.f	// 0.5+0.5 -> 1
+0x155e06900/5	FPSTORE	1	// i:0, f:1
+0x155e06920/4	JMP	0x155e067e0
+0x155e067e0/4	FPLOAD	1	// i:0, f:1
+0x155e06800/5	FPLOAD	-2	// i:0, f:2
+0x155e06820/6	LESS.f	// 1<2 -> 1
+0x155e06840/5	JF	0x155e06940	// 1
+0x155e06860/4	FPLOAD	1	// i:0, f:1
+0x155e06880/5	CALL_EXT	0x1046b893c
+=> 1
+0x155e068a0/4	FPLOAD	1	// i:0, f:1
+0x155e068c0/5	PUSH.f	0.5
+0x155e068e0/6	ADD.f	// 1+0.5 -> 1.5
+0x155e06900/5	FPSTORE	1	// i:0, f:1.5
+0x155e06920/4	JMP	0x155e067e0
+0x155e067e0/4	FPLOAD	1	// i:0, f:1.5
+0x155e06800/5	FPLOAD	-2	// i:0, f:2
+0x155e06820/6	LESS.f	// 1.5<2 -> 1
+0x155e06840/5	JF	0x155e06940	// 1
+0x155e06860/4	FPLOAD	1	// i:0, f:1.5
+0x155e06880/5	CALL_EXT	0x1046b893c
+=> 1.5
+0x155e068a0/4	FPLOAD	1	// i:0, f:1.5
+0x155e068c0/5	PUSH.f	0.5
+0x155e068e0/6	ADD.f	// 1.5+0.5 -> 2
+0x155e06900/5	FPSTORE	1	// i:0, f:2
+0x155e06920/4	JMP	0x155e067e0
+0x155e067e0/4	FPLOAD	1	// i:0, f:2
+0x155e06800/5	FPLOAD	-2	// i:0, f:2
+0x155e06820/6	LESS.f	// 2<2 -> 0
+0x155e06840/5	JF	0x155e06940	// 0
+0x155e06940/4	RET_VOID	1
+0x155e06000/0	HALT=== Double function test completed ===

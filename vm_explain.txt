@@ -1,0 +1,324 @@
+# Explicații despre implementarea mașinii virtuale AtomC
+
+## Introducere
+
+Mașina virtuală (VM) implementată pentru AtomC este o mașină virtuală bazată pe stivă, concepută pentru a executa codul compilat din limbajul AtomC. Aceasta folosește o stivă pentru a stoca valori temporare și argumente pentru operații, și un set de instrucțiuni pentru a manipula aceste valori.
+
+## Structura mașinii virtuale
+
+### Componente principale:
+
+1. **Stiva (Stack)**: Un vector de valori universale (`Val`) care poate stoca diferite tipuri de date.
+2. **Pointeri importanți**:
+   - **SP (Stack Pointer)**: Indică vârful stivei.
+   - **FP (Frame Pointer)**: Indică baza frame-ului curent al funcției.
+   - **IP (Instruction Pointer)**: Indică instrucțiunea curentă care se execută.
+3. **Instrucțiuni**: Fiecare instrucțiune are un cod de operație (opcode) și un argument opțional.
+
+### Tipul Val (Valoarea universală)
+
+Tipul `Val` este o uniune care poate reprezenta orice tip de date AtomC:
+```c
+typedef union {
+    int i;              // valori de tip int
+    double f;           // valori de tip double (float)
+    void *p;            // pointeri
+    void (*extFnPtr)(); // pointer la o funcție externă
+    Instr *instr;       // pointer la o instrucțiune
+} Val;
+```
+
+Această structură permite ca o singură celulă din stivă să stocheze orice tip de date, făcând mașina virtuală foarte flexibilă.
+
+## Instrucțiunile mașinii virtuale
+
+### Instrucțiuni de bază:
+
+- **OP_HALT**: Oprește execuția VM.
+- **OP_PUSH_I**, **OP_PUSH_F**: Pusează o valoare constantă (int sau double) pe stivă.
+- **OP_CALL**: Apelează o funcție definită în VM.
+- **OP_CALL_EXT**: Apelează o funcție externă (implementată în C).
+- **OP_ENTER**: Creează un frame nou pentru o funcție, alocând spațiu pentru variabile locale.
+- **OP_RET**, **OP_RET_VOID**: Returnează din funcție (cu sau fără valoare).
+- **OP_FPLOAD**, **OP_FPSTORE**: Încarcă/stochează valori relative la frame pointer.
+- **OP_ADD_I**, **OP_ADD_F**: Adună două valori de tip int sau double.
+- **OP_LESS_I**, **OP_LESS_F**: Compară două valori (int sau double) și pusează rezultatul.
+- **OP_JMP**, **OP_JF**, **OP_JT**: Instrucțiuni de salt (necondiționat, condiționat pe false/true).
+- **OP_CONV_I_F**, **OP_CONV_F_I**: Convertește între int și double.
+- **OP_EQ_I**, **OP_EQ_F**: Verifică egalitatea între două valori (int sau double).
+- **OP_GT_I**, **OP_GT_F**: Verifică dacă o valoare este mai mare decât alta.
+- **OP_SUB_I**, **OP_SUB_F**: Scade două valori de tip int sau double.
+- **OP_AND**: Operația logică AND pe două valori întregi.
+
+## Operațiile pe stivă
+
+Mașina virtuală oferă funcții pentru manipularea stivei:
+
+- **pushv(Val v)**: Pusează o valoare universală pe stivă.
+- **popv()**: Scoate o valoare universală de pe stivă și o returnează.
+- **pushi(int i)**: Pusează o valoare întreagă pe stivă.
+- **popi()**: Scoate o valoare întreagă de pe stivă și o returnează.
+- **pushf(double f)**: Pusează o valoare double pe stivă.
+- **popf()**: Scoate o valoare double de pe stivă și o returnează.
+- **pushp(void *p)**: Pusează un pointer pe stivă.
+- **popp()**: Scoate un pointer de pe stivă și îl returnează.
+
+## Inițializarea mașinii virtuale
+
+Funcția `vmInit()` pregătește mașina virtuală pentru execuție:
+- Înregistrează funcții externe predefinite (put_i, put_d, max, max3, random, sqrt).
+- Adaugă aceste funcții în tabela de simboluri pentru a fi găsite în timpul analizei de tipuri.
+
+## Implementarea genTestProgram() pas cu pas
+
+Această funcție generează cod VM pentru programul AtomC:
+```
+f(2);
+void f(int n){
+    int i=0;
+    while(i<n){
+        put_i(i);
+        i=i+1;
+    }
+}
+```
+
+Explicație pas cu pas:
+
+1. **Inițializare**: 
+   ```c
+   Instr *code = NULL;
+   ```
+   Se creează o listă goală de instrucțiuni.
+
+2. **Apel funcție cu parametru**:
+   ```c
+   addInstrWithInt(&code, OP_PUSH_I, 2);
+   Instr *callPos = addInstr(&code, OP_CALL);
+   ```
+   - `OP_PUSH_I`: Pusează argumentul `2` pe stivă.
+   - `OP_CALL`: Instrucțiune pentru apelarea funcției (pointerii vor fi completați mai târziu).
+
+3. **Terminare program**:
+   ```c
+   addInstr(&code, OP_HALT);
+   ```
+   - `OP_HALT`: Oprește execuția după terminarea funcției.
+
+4. **Începutul funcției**:
+   ```c
+   callPos->arg.instr = addInstrWithInt(&code, OP_ENTER, 1);
+   ```
+   - Completează argumentul instrucțiunii `OP_CALL` pentru a pointa la începutul funcției.
+   - `OP_ENTER`: Creează un frame de funcție cu 1 variabilă locală (i).
+
+5. **Inițializare variabilă i=0**:
+   ```c
+   addInstrWithInt(&code, OP_PUSH_I, 0);
+   addInstrWithInt(&code, OP_FPSTORE, 1);
+   ```
+   - `OP_PUSH_I`: Pusează valoarea `0` pe stivă.
+   - `OP_FPSTORE`: Stochează valoarea la poziția `FP+1` (variabila i).
+
+6. **Începutul buclei while**:
+   ```c
+   Instr *whilePos = addInstrWithInt(&code, OP_FPLOAD, 1);
+   addInstrWithInt(&code, OP_FPLOAD, -2);
+   addInstr(&code, OP_LESS_I);
+   Instr *jfAfter = addInstr(&code, OP_JF);
+   ```
+   - `OP_FPLOAD(1)`: Încarcă valoarea lui `i` pe stivă.
+   - `OP_FPLOAD(-2)`: Încarcă valoarea parametrului `n` pe stivă.
+   - `OP_LESS_I`: Compară `i < n` și pusează rezultatul (0 sau 1).
+   - `OP_JF`: Salt la sfârșitul buclei dacă rezultatul este fals (0).
+
+7. **Corpul buclei - apel put_i(i)**:
+   ```c
+   addInstrWithInt(&code, OP_FPLOAD, 1);
+   Symbol *s = findSymbol("put_i");
+   if (!s) err("undefined: put_i");
+   addInstr(&code, OP_CALL_EXT)->arg.extFnPtr = s->fn.extFnPtr;
+   ```
+   - `OP_FPLOAD(1)`: Încarcă valoarea lui `i` pe stivă ca argument pentru `put_i`.
+   - `OP_CALL_EXT`: Apelează funcția externă `put_i`.
+
+8. **Incrementare i=i+1**:
+   ```c
+   addInstrWithInt(&code, OP_FPLOAD, 1);
+   addInstrWithInt(&code, OP_PUSH_I, 1);
+   addInstr(&code, OP_ADD_I);
+   addInstrWithInt(&code, OP_FPSTORE, 1);
+   ```
+   - `OP_FPLOAD(1)`: Încarcă valoarea lui `i` pe stivă.
+   - `OP_PUSH_I(1)`: Pusează constanta `1` pe stivă.
+   - `OP_ADD_I`: Adună cei doi operanzi și pusează rezultatul.
+   - `OP_FPSTORE(1)`: Stochează rezultatul înapoi în `i`.
+
+9. **Salt înapoi la începutul buclei**:
+   ```c
+   addInstr(&code, OP_JMP)->arg.instr = whilePos;
+   ```
+   - `OP_JMP`: Salt necondiționat la începutul buclei while.
+
+10. **Returnare din funcție**:
+    ```c
+    jfAfter->arg.instr = addInstrWithInt(&code, OP_RET_VOID, 1);
+    ```
+    - Completează instrucțiunea `OP_JF` pentru a sări la sfârșitul funcției.
+    - `OP_RET_VOID`: Returnează din funcție fără valoare, eliberând 1 parametru de pe stivă.
+
+11. **Returnare cod generat**:
+    ```c
+    return code;
+    ```
+    - Returnează lista de instrucțiuni generate.
+
+## Implementarea genTestDoubleProgram() pas cu pas
+
+Această funcție generează cod VM pentru programul AtomC cerut în Activitatea 6:
+```
+f(2.0);
+void f(double n){
+    double i=0.0;
+    while(i<n){
+        put_d(i);
+        i=i+0.5;
+    }
+}
+```
+
+Explicație pas cu pas:
+
+1. **Inițializare**: 
+   ```c
+   Instr *code = NULL;
+   ```
+   Se creează o listă goală de instrucțiuni.
+
+2. **Apel funcție cu parametru double**:
+   ```c
+   addInstrWithDouble(&code, OP_PUSH_F, 2.0);
+   Instr *callPos = addInstr(&code, OP_CALL);
+   ```
+   - `OP_PUSH_F`: Pusează argumentul `2.0` pe stivă.
+   - `OP_CALL`: Instrucțiune pentru apelarea funcției.
+
+3. **Terminare program**:
+   ```c
+   addInstr(&code, OP_HALT);
+   ```
+   - `OP_HALT`: Oprește execuția după terminarea funcției.
+
+4. **Începutul funcției**:
+   ```c
+   callPos->arg.instr = addInstrWithInt(&code, OP_ENTER, 1);
+   ```
+   - `OP_ENTER`: Creează un frame de funcție cu 1 variabilă locală (i).
+
+5. **Inițializare variabilă i=0.0**:
+   ```c
+   addInstrWithDouble(&code, OP_PUSH_F, 0.0);
+   addInstrWithInt(&code, OP_FPSTORE, 1);
+   ```
+   - `OP_PUSH_F`: Pusează valoarea `0.0` pe stivă.
+   - `OP_FPSTORE`: Stochează valoarea la poziția `FP+1` (variabila i).
+
+6. **Începutul buclei while**:
+   ```c
+   Instr *whilePos = addInstrWithInt(&code, OP_FPLOAD, 1);
+   addInstrWithInt(&code, OP_FPLOAD, -2);
+   addInstr(&code, OP_LESS_F);
+   Instr *jfAfter = addInstr(&code, OP_JF);
+   ```
+   - `OP_FPLOAD(1)`: Încarcă valoarea lui `i` pe stivă.
+   - `OP_FPLOAD(-2)`: Încarcă valoarea parametrului `n` pe stivă.
+   - `OP_LESS_F`: Compară `i < n` pentru valori de tip double și pusează rezultatul.
+   - `OP_JF`: Salt la sfârșitul buclei dacă rezultatul este fals.
+
+7. **Corpul buclei - apel put_d(i)**:
+   ```c
+   addInstrWithInt(&code, OP_FPLOAD, 1);
+   Symbol *s = findSymbol("put_d");
+   if (!s) err("undefined: put_d");
+   addInstr(&code, OP_CALL_EXT)->arg.extFnPtr = s->fn.extFnPtr;
+   ```
+   - `OP_FPLOAD(1)`: Încarcă valoarea lui `i` pe stivă ca argument pentru `put_d`.
+   - `OP_CALL_EXT`: Apelează funcția externă `put_d`.
+
+8. **Incrementare i=i+0.5**:
+   ```c
+   addInstrWithInt(&code, OP_FPLOAD, 1);
+   addInstrWithDouble(&code, OP_PUSH_F, 0.5);
+   addInstr(&code, OP_ADD_F);
+   addInstrWithInt(&code, OP_FPSTORE, 1);
+   ```
+   - `OP_FPLOAD(1)`: Încarcă valoarea lui `i` pe stivă.
+   - `OP_PUSH_F(0.5)`: Pusează constanta `0.5` pe stivă.
+   - `OP_ADD_F`: Adună cei doi operanzi double și pusează rezultatul.
+   - `OP_FPSTORE(1)`: Stochează rezultatul înapoi în `i`.
+
+9. **Salt înapoi la începutul buclei**:
+   ```c
+   addInstr(&code, OP_JMP)->arg.instr = whilePos;
+   ```
+   - `OP_JMP`: Salt necondiționat la începutul buclei while.
+
+10. **Returnare din funcție**:
+    ```c
+    jfAfter->arg.instr = addInstrWithInt(&code, OP_RET_VOID, 1);
+    ```
+    - `OP_RET_VOID`: Returnează din funcție fără valoare, eliberând 1 parametru de pe stivă.
+
+## Execuția în mașina virtuală
+
+Când funcția `run()` este apelată cu codul generat, mașina virtuală execută fiecare instrucțiune în ordine, manipulând stiva și actualizând registrele VM în consecință.
+
+Pentru programul de exemplu `genTestDoubleProgram()`, execuția va:
+1. Pusează valoarea 2.0 pe stivă ca argument.
+2. Apelează funcția `f`.
+3. Creează un frame de funcție pentru `f` și alocă spațiu pentru variabila `i`.
+4. Inițializează `i` cu 0.0.
+5. Verifică condiția `i < n` (0.0 < 2.0), care este adevărată.
+6. Apelează `put_d(i)` care afișează valoarea 0.0.
+7. Incrementează `i` la 0.5.
+8. Verifică din nou condiția `i < n` (0.5 < 2.0), care este adevărată.
+9. Apelează `put_d(i)` care afișează valoarea 0.5.
+10. Incrementează `i` la 1.0.
+11. Verifică din nou condiția `i < n` (1.0 < 2.0), care este adevărată.
+12. Apelează `put_d(i)` care afișează valoarea 1.0.
+13. Incrementează `i` la 1.5.
+14. Verifică din nou condiția `i < n` (1.5 < 2.0), care este adevărată.
+15. Apelează `put_d(i)` care afișează valoarea 1.5.
+16. Incrementează `i` la 2.0.
+17. Verifică din nou condiția `i < n` (2.0 < 2.0), care este falsă.
+18. Iese din buclă și returnează din funcție.
+19. Oprește execuția (HALT).
+
+## Layout-ul frame-ului de funcție
+
+Când o funcție este apelată, layout-ul frame-ului pe stivă este următorul:
+
+```
++----------------+
+| Variabile      | <- FP + număr_de_params + 1
+| locale         |
++----------------+
+| Vechiul FP     | <- FP + 0
++----------------+
+| Adresa de      | <- FP - 1
+| revenire       |
++----------------+
+| Parametri      | <- FP - 2, FP - 3, ...
+|                |
++----------------+
+```
+
+Astfel:
+- Parametrii funcției sunt accesați la offset-uri negative de la FP (-2, -3, etc.)
+- Vechiul FP este la FP+0
+- Adresa de revenire este la FP-1
+- Variabilele locale sunt la offset-uri pozitive de la FP (1, 2, etc.)
+
+## Concluzie
+
+Mașina virtuală pentru AtomC este un exemplu excelent de VM bazată pe stivă, implementând toate instrucțiunile necesare pentru execuția programelor AtomC. Implementarea funcțiilor `genTestProgram()` și `genTestDoubleProgram()` demonstrează capacitatea VM de a genera și executa cod pentru diverse tipuri de date și structuri de control. 

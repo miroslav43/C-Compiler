@@ -37,7 +37,7 @@ TEST_ERROR_BIN = $(TESTBINDIR)/test_error
 TEST_DOMAIN_BIN = $(TESTBINDIR)/test_domain
 
 # Primary targets
-.PHONY: all clean test test_lexer test_parser test_error test_domain domain help test_analiza test_clean docs test_analiza2 test_analiza_clean test-vm
+.PHONY: all clean test test_lexer test_parser test_error test_domain domain help test_analiza test_clean docs test_analiza2 test_analiza_clean test-vm vm-activity6 vm-double-test test_gen
 
 # Default target: build everything
 all: directories $(TARGET) test_bins
@@ -140,6 +140,16 @@ test_analiza_clean: $(TARGET)
 	./$(TARGET) tests/testat_clean.c || true
 	@echo "Clean analysis test done."
 
+# Code generation tests
+test_gen: $(TARGET)
+	@echo "=== Running code generation tests ==="
+	@echo "Testing simple variable assignment and output..."
+	./$(TARGET) tests/simple_test.c || true
+	@echo ""
+	@echo "Testing complete factorial program with recursion and loops..."
+	./$(TARGET) tests/testgc.c || true
+	@echo "=== Code generation tests completed ==="
+
 test_clean:
 	@echo "Running type analysis with a clean test file..."
 	sed -i.bak '25,35d' tests/testat.c
@@ -184,7 +194,10 @@ docs:
 	@echo "- \`make test_analiza\` - Run type analysis tests with intentional errors" >> README.md
 	@echo "- \`make test_analiza2\` - Run type analysis tests on testat2.c" >> README.md
 	@echo "- \`make test_analiza_clean\` - Run type analysis tests on clean test file" >> README.md
+	@echo "- \`make test_gen\` - Run code generation tests with VM execution" >> README.md
 	@echo "- \`make test_clean\`
+	@echo "- \`make vm-activity6\` - Run Activity 6 VM tests" >> README.md
+	@echo "- \`make vm-double-test\` - Run only the double function test" >> README.md
 
 # VM test target
 bin/tests/test_vm: bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o tests/test_vm.c
@@ -192,3 +205,43 @@ bin/tests/test_vm: bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o tests/test_vm.c
 
 test-vm: bin/tests/test_vm
 	./bin/tests/test_vm
+
+# Activity 6 specific target - runs only the VM with the double function test
+vm-activity6: bin/tests/test_vm
+	@echo "=== Running Activity 6 VM tests ==="
+	@echo "Testing virtual machine implementation with double operations"
+	@echo "Running f(2.0) with double operations..."
+	./bin/tests/test_vm
+	@echo "=== Activity 6 VM tests completed ==="
+
+# Create a specific test for the double function test
+vm-double-test: bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o
+	@echo "=== Running only the double function test ==="
+	@echo "Testing void f(double n) implementation..."
+	@echo "Program: f(2.0);"
+	@echo "void f(double n){"
+	@echo "    double i=0.0;"
+	@echo "    while(i<n){"
+	@echo "        put_d(i);"
+	@echo "        i=i+0.5;"
+	@echo "    }"
+	@echo "}"
+	@echo ""
+	@echo '#include <stdio.h>' > $(TESTDIR)/double_test.c
+	@echo '#include "../include/vm.h"' >> $(TESTDIR)/double_test.c
+	@echo '#include "../include/ad.h"' >> $(TESTDIR)/double_test.c
+	@echo '' >> $(TESTDIR)/double_test.c
+	@echo 'int main()' >> $(TESTDIR)/double_test.c
+	@echo '{' >> $(TESTDIR)/double_test.c
+	@echo '    printf("\\n\\nRunning double test program (genTestDoubleProgram):\\n");' >> $(TESTDIR)/double_test.c
+	@echo '    pushDomain();' >> $(TESTDIR)/double_test.c
+	@echo '    vmInit();' >> $(TESTDIR)/double_test.c
+	@echo '    Instr *testCodeD = genTestDoubleProgram();' >> $(TESTDIR)/double_test.c
+	@echo '    run(testCodeD);' >> $(TESTDIR)/double_test.c
+	@echo '    dropDomain();' >> $(TESTDIR)/double_test.c
+	@echo '    return 0;' >> $(TESTDIR)/double_test.c
+	@echo '}' >> $(TESTDIR)/double_test.c
+	@mkdir -p $(TESTBINDIR)
+	$(CC) -Wall -Wextra -g -I include -o bin/tests/double_test bin/obj/vm.o bin/obj/ad.o bin/obj/utils.o $(TESTDIR)/double_test.c
+	./bin/tests/double_test
+	@echo "=== Double function test completed ==="

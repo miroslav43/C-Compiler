@@ -7,7 +7,7 @@ int main()
 	while (i < 10)
 	{
 		if (i / 2 == 1)
-			puti(i);
+			put_i(i);
 		i = i + 1;
 	}
 	if (4.9 == 49e-1 && 0.49E1 == 2.45 * 2.0)

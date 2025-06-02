@@ -9,6 +9,8 @@
 #include "include/ad.h"
 #include "include/at.h"
 #include "include/utils.h"
+#include "include/vm.h"
+#include "include/gc.h"
 
 int main(int argc, char *argv[])
 {
@@ -57,6 +59,9 @@ int main(int argc, char *argv[])
     // Initialize domain analysis
     pushDomain(); // Create global domain
 
+    // Initialize VM for external functions - MOVED BEFORE PARSING
+    vmInit();
+
     // Register external functions used in test files
     Type intType = {TB_INT, NULL, -1, false};
     Type doubleType = {TB_DOUBLE, NULL, -1, false};
@@ -64,22 +69,27 @@ int main(int argc, char *argv[])
     Type voidType = {TB_VOID, NULL, -1, false};
     Type stringType = {TB_CHAR, NULL, 0, false}; // char[] type for strings
 
-    Symbol *putiSym = addExtFn("puti", (void (*)())puti, voidType);
-    addFnParam(putiSym, "i", intType);
-
-    Symbol *putsSym = addExtFn("puts", (void (*)())puts1, voidType);
+    Symbol *putsSym = addExtFn("puts", (void (*)())puts1_wrapper, voidType);
     addFnParam(putsSym, "s", stringType);
 
-    Symbol *putcSym = addExtFn("putc", (void (*)())putc1, voidType);
+    Symbol *putcSym = addExtFn("putc", (void (*)())putc1_wrapper, voidType);
     addFnParam(putcSym, "c", charType);
-
-    Symbol *putdSym = addExtFn("putd", (void (*)())putd, voidType);
-    addFnParam(putdSym, "d", doubleType);
 
     // Run parser
     printf("\nStarting syntax analysis...\n");
     parse(tokens);
     printf("Syntax analysis completed successfully.\n");
+
+    // Code generation entry point
+    Symbol *symMain = findSymbolInDomain(symTable, "main");
+    if (!symMain)
+        err("missing main function");
+    Instr *entryCode = NULL;
+    addInstr(&entryCode, OP_CALL)->arg.instr = symMain->fn.instr;
+    addInstr(&entryCode, OP_HALT);
+    printf("\nStarting code execution...\n");
+    run(entryCode);
+    printf("\nCode execution completed.\n");
 
     // Show domain analysis results if not running type analysis tests
     if (strstr(inputFile, "testat.c") == NULL)

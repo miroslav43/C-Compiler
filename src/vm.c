@@ -89,12 +89,23 @@ void put_i()
 	printf("=> %d", popi());
 }
 
-// --- DOUBLE PRINT FUNCTION ---
 void put_d()
 {
 	printf("=> %g", popf());
 }
-// --- END DOUBLE PRINT FUNCTION ---
+
+// Stack-based wrappers for external functions
+void puts1_wrapper()
+{
+	char *str = (char *)popp();
+	puts1(str);
+}
+
+void putc1_wrapper()
+{
+	int c = popi();
+	putc1((char)c);
+}
 
 int max(int a, int b) { return a > b ? a : b; }
 int max3(int a, int b, int c) { return max(max(a, b), c); }
@@ -105,21 +116,21 @@ void vmInit()
 {
 	Symbol *fn = addExtFn("put_i", put_i, (Type){TB_VOID, NULL, -1, false});
 	addFnParam(fn, "i", (Type){TB_INT, NULL, -1, false});
-	// Register put_d for double printing
+
 	Symbol *fn_d = addExtFn("put_d", put_d, (Type){TB_VOID, NULL, -1, false});
 	addFnParam(fn_d, "d", (Type){TB_DOUBLE, NULL, -1, false});
-	// Register max
+
 	Symbol *fn_max = addExtFn("max", (void (*)())(int (*)(int, int))max, (Type){TB_INT, NULL, -1, false});
 	addFnParam(fn_max, "a", (Type){TB_INT, NULL, -1, false});
 	addFnParam(fn_max, "b", (Type){TB_INT, NULL, -1, false});
-	// Register max3
+
 	Symbol *fn_max3 = addExtFn("max3", (void (*)())(int (*)(int, int, int))max3, (Type){TB_INT, NULL, -1, false});
 	addFnParam(fn_max3, "a", (Type){TB_INT, NULL, -1, false});
 	addFnParam(fn_max3, "b", (Type){TB_INT, NULL, -1, false});
 	addFnParam(fn_max3, "c", (Type){TB_INT, NULL, -1, false});
-	// Register random
+
 	addExtFn("random", (void (*)())(int (*)())random_vm, (Type){TB_INT, NULL, -1, false});
-	// Register sqrt
+
 	Symbol *fn_sqrt = addExtFn("sqrt", (void (*)())(float (*)(float))sqrtf_vm, (Type){TB_DOUBLE, NULL, -1, false});
 	addFnParam(fn_sqrt, "x", (Type){TB_DOUBLE, NULL, -1, false});
 }
@@ -137,7 +148,6 @@ double popf()
 		err("trying to pop from empty stack");
 	return SP--->f;
 }
-// --- END DOUBLE STACK OPERATIONS ---
 
 void run(Instr *IP)
 {
@@ -146,8 +156,7 @@ void run(Instr *IP)
 	void (*extFnPtr)();
 	for (;;)
 	{
-		// shows the index of the current instruction and the number of values from stack
-		printf("%p/%d\t", IP, (int)(SP - stack + 1));
+		printf("%p/%d\t", IP, (int)(SP - stack + 1)); // show how many values are on the stack
 		switch (IP->op)
 		{
 		case OP_HALT:
@@ -173,6 +182,13 @@ void run(Instr *IP)
 			pushp(FP);
 			FP = SP;
 			SP += IP->arg.i;
+			// Initialize local variables to zero
+			for (int j = 1; j <= IP->arg.i; j++)
+			{
+				FP[j].i = 0;
+			}
+			// Ensure SP is positioned well after local variables for stack operations
+			SP += 2; // Create more buffer space
 			printf("ENTER\t%d", IP->arg.i);
 			IP = IP->next;
 			break;
@@ -331,6 +347,120 @@ void run(Instr *IP)
 			SP = FP - nParams - 2;
 			FP = FP[0].p;
 			pushv(retVal);
+			break;
+		}
+		// --- New instruction cases for code generation ---
+		case OP_MUL_I:
+		{
+			int b = popi();
+			int a = popi();
+			pushi(a * b);
+			printf("MUL.i\t// %d*%d -> %d", a, b, a * b);
+			IP = IP->next;
+			break;
+		}
+		case OP_MUL_F:
+		{
+			double b = popf();
+			double a = popf();
+			pushf(a * b);
+			printf("MUL.f\t// %g*%g -> %g", a, b, a * b);
+			IP = IP->next;
+			break;
+		}
+		case OP_DIV_I:
+		{
+			int b = popi();
+			int a = popi();
+			if (b == 0)
+				err("division by zero");
+			pushi(a / b);
+			printf("DIV.i\t// %d/%d -> %d", a, b, a / b);
+			IP = IP->next;
+			break;
+		}
+		case OP_DIV_F:
+		{
+			double b = popf();
+			double a = popf();
+			pushf(a / b);
+			printf("DIV.f\t// %g/%g -> %g", a, b, a / b);
+			IP = IP->next;
+			break;
+		}
+		case OP_LOAD_I:
+		{
+			void *addr = popp();
+			int val = *(int *)addr;
+			pushi(val);
+			printf("LOAD.i\t// load from %p -> %d", addr, val);
+			IP = IP->next;
+			break;
+		}
+		case OP_LOAD_F:
+		{
+			void *addr = popp();
+			double val = *(double *)addr;
+			pushf(val);
+			printf("LOAD.f\t// load from %p -> %g", addr, val);
+			IP = IP->next;
+			break;
+		}
+		case OP_STORE_I:
+		{
+			int val = popi();
+			void *addr = popp();
+			*(int *)addr = val;
+			printf("STORE.i\t// store %d to %p", val, addr);
+			IP = IP->next;
+			break;
+		}
+		case OP_STORE_F:
+		{
+			double val = popf();
+			void *addr = popp();
+			*(double *)addr = val;
+			printf("STORE.f\t// store %g to %p", val, addr);
+			IP = IP->next;
+			break;
+		}
+		case OP_FPADDR_I:
+		{
+			int idx = IP->arg.i;
+			void *addr = &FP[idx];
+			pushp(addr);
+			printf("FPADDR.i\t%d\t// %p", idx, addr);
+			IP = IP->next;
+			break;
+		}
+		case OP_FPADDR_F:
+		{
+			int idx = IP->arg.i;
+			void *addr = &FP[idx];
+			pushp(addr);
+			printf("FPADDR.f\t%d\t// %p", idx, addr);
+			IP = IP->next;
+			break;
+		}
+		case OP_ADDR:
+		{
+			void *addr = IP->arg.p;
+			pushp(addr);
+			printf("ADDR\t%p", addr);
+			IP = IP->next;
+			break;
+		}
+		case OP_NOP:
+		{
+			printf("NOP");
+			IP = IP->next;
+			break;
+		}
+		case OP_DROP:
+		{
+			Val val = popv();
+			printf("DROP\t// dropped i:%d, f:%g", val.i, val.f);
+			IP = IP->next;
 			break;
 		}
 		default:
@@ -645,4 +775,36 @@ Instr *genTest5()
 	callAck2->arg.instr = callPos->arg.instr;
 	callAck3->arg.instr = callPos->arg.instr;
 	return code;
+}
+
+Instr *lastInstr(Instr *list)
+{
+	if (!list)
+		return NULL;
+	while (list->next)
+		list = list->next;
+	return list;
+}
+
+void delInstrAfter(Instr *instr)
+{
+	if (!instr)
+		return;
+	Instr *p = instr->next;
+	while (p)
+	{
+		Instr *next = p->next;
+		free(p);
+		p = next;
+	}
+	instr->next = NULL;
+}
+
+Instr *insertInstr(Instr *after, Opcode op)
+{
+	Instr *i = (Instr *)safeAlloc(sizeof(Instr));
+	i->op = op;
+	i->next = after->next;
+	after->next = i;
+	return i;
 }
