@@ -5,6 +5,27 @@
 #include "utils.h"
 #include "ad.h"
 
+// Global variables to collect results
+static int results[100]; // Store up to 100 results
+static int result_count = 0;
+
+void reset_results()
+{
+	result_count = 0;
+}
+
+void print_collected_results()
+{
+	if (result_count == 0)
+		return;
+
+	printf("\nExtracted Results from Generated Code:\n");
+	for (int i = 0; i < result_count; i++)
+	{
+		printf("  Result %d: %d\n", i + 1, results[i]);
+	}
+}
+
 Instr *addInstr(Instr **list, Opcode op)
 {
 	Instr *i = (Instr *)safeAlloc(sizeof(Instr));
@@ -86,12 +107,26 @@ void *popp()
 
 void put_i()
 {
-	printf("=> %d", popi());
+	int value = popi();
+	printf("=> %d", value);
+
+	// Collect result for later display
+	if (result_count < 100)
+	{
+		results[result_count++] = value;
+	}
 }
 
 void put_d()
 {
-	printf("=> %g", popf());
+	double value = popf();
+	printf("=> %g", value);
+
+	// Collect result as int for later display
+	if (result_count < 100)
+	{
+		results[result_count++] = (int)value;
+	}
 }
 
 // Stack-based wrappers for external functions
@@ -181,14 +216,12 @@ void run(Instr *IP)
 		case OP_ENTER:
 			pushp(FP);
 			FP = SP;
-			SP += IP->arg.i;
-			// Initialize local variables to zero
+			SP += IP->arg.i; // Move SP first to allocate space
+			// Initialize local variables to zero AFTER SP is moved
 			for (int j = 1; j <= IP->arg.i; j++)
 			{
 				FP[j].i = 0;
 			}
-			// Ensure SP is positioned well after local variables for stack operations
-			SP += 2; // Create more buffer space
 			printf("ENTER\t%d", IP->arg.i);
 			IP = IP->next;
 			break;
@@ -411,6 +444,7 @@ void run(Instr *IP)
 			int val = popi();
 			void *addr = popp();
 			*(int *)addr = val;
+			pushi(val); // Leave the stored value on stack for assignment expression
 			printf("STORE.i\t// store %d to %p", val, addr);
 			IP = IP->next;
 			break;
@@ -420,6 +454,7 @@ void run(Instr *IP)
 			double val = popf();
 			void *addr = popp();
 			*(double *)addr = val;
+			pushf(val); // Leave the stored value on stack for assignment expression
 			printf("STORE.f\t// store %g to %p", val, addr);
 			IP = IP->next;
 			break;

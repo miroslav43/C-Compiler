@@ -87,3 +87,15 @@ Atenție: deoarece în activitatea următoare (generarea de cod), se vor mai ad�
 cauză fișierele vm.h și vm.c vor avea adăugiri, este bine ca instrucțiunile MV pe care le adăugați să fie puse la
 sfârșitul instrucțiunilor existente, pentru a fi ușor de migrat în versiunile noi de vm.h și vm.c.
 Laborator Limbaje formale și tehnici de compilare, Universitatea Politehnica Timișoara. © Aciu Răzvan-Mihai, gandestete pas cu pas cum sa le adaugi 
+
+
+
+
+Op de comp
+transformare in float 
+fdadr cum ?
+load 
+old_fp
+
+inserare instructiune
+st instructiuen

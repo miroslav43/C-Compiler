@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
 
     // Initialize VM for external functions - MOVED BEFORE PARSING
     vmInit();
+    reset_results(); // Reset result collection
 
     // Register external functions used in test files
     Type intType = {TB_INT, NULL, -1, false};
@@ -80,20 +81,11 @@ int main(int argc, char *argv[])
     parse(tokens);
     printf("Syntax analysis completed successfully.\n");
 
-    // Code generation entry point
-    Symbol *symMain = findSymbolInDomain(symTable, "main");
-    if (!symMain)
-        err("missing main function");
-    Instr *entryCode = NULL;
-    addInstr(&entryCode, OP_CALL)->arg.instr = symMain->fn.instr;
-    addInstr(&entryCode, OP_HALT);
-    printf("\nStarting code execution...\n");
-    run(entryCode);
-    printf("\nCode execution completed.\n");
-
-    // Show domain analysis results if not running type analysis tests
+    // Show domain analysis results BEFORE code execution
     if (strstr(inputFile, "testat.c") == NULL)
     {
+        printf("\nDomain Analysis Results:\n");
+        printf("========================\n");
         if (showTable)
         {
             showDomainTable(symTable, "global");
@@ -102,7 +94,26 @@ int main(int argc, char *argv[])
         {
             showDomain(symTable, "global");
         }
+        printf("========================\n");
     }
+
+    // Code generation and execution
+    Symbol *symMain = findSymbolInDomain(symTable, "main");
+    if (!symMain)
+        err("missing main function");
+    Instr *entryCode = NULL;
+    addInstr(&entryCode, OP_CALL)->arg.instr = symMain->fn.instr;
+    addInstr(&entryCode, OP_HALT);
+
+    printf("\nStarting code execution...\n");
+    printf("Program Output:\n");
+    printf("===============\n");
+    run(entryCode);
+    printf("===============\n");
+    printf("Code execution completed.\n");
+
+    // Display collected results
+    print_collected_results();
 
     // Cleanup
     dropDomain(); // Remove global domain

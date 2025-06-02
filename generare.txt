@@ -1,0 +1,294 @@
+=== Running code generation tests ===
+Testing complete factorial program with recursion and loops...
+./bin/atomc tests/testgc.c || true
+Analyzing file: tests/testgc.c
+2 - TYPE_INT
+2 - ID: fact
+2 - LPAR
+2 - TYPE_INT
+2 - ID: n
+2 - RPAR
+2 - LACC
+3 - IF
+3 - LPAR
+3 - ID: n
+3 - LESS
+3 - INT: 3
+3 - RPAR
+3 - RETURN
+3 - ID: n
+3 - SEMICOLON
+4 - RETURN
+4 - ID: n
+4 - MUL
+4 - ID: fact
+4 - LPAR
+4 - ID: n
+4 - SUB
+4 - INT: 1
+4 - RPAR
+4 - SEMICOLON
+5 - RACC
+7 - VOID
+7 - ID: main
+7 - LPAR
+7 - RPAR
+7 - LACC
+8 - ID: put_i
+8 - LPAR
+8 - DOUBLE: 5.913000
+8 - RPAR
+8 - SEMICOLON
+10 - ID: put_i
+10 - LPAR
+10 - ID: fact
+10 - LPAR
+10 - INT: 6
+10 - RPAR
+10 - RPAR
+10 - SEMICOLON
+13 - TYPE_INT
+13 - ID: r
+13 - SEMICOLON
+14 - ID: r
+14 - ASSIGN
+14 - INT: 1
+14 - SEMICOLON
+15 - TYPE_INT
+15 - ID: i
+15 - SEMICOLON
+16 - ID: i
+16 - ASSIGN
+16 - INT: 2
+16 - SEMICOLON
+17 - WHILE
+17 - LPAR
+17 - ID: i
+17 - LESS
+17 - INT: 5
+17 - RPAR
+17 - LACC
+18 - ID: r
+18 - ASSIGN
+18 - ID: r
+18 - MUL
+18 - ID: i
+18 - SEMICOLON
+19 - ID: i
+19 - ASSIGN
+19 - ID: i
+19 - ADD
+19 - INT: 1
+19 - SEMICOLON
+20 - RACC
+21 - ID: put_i
+21 - LPAR
+21 - ID: r
+21 - RPAR
+21 - SEMICOLON
+22 - RACC
+23 - END
+
+Starting syntax analysis...
+Syntax analysis completed successfully.
+
+Domain Analysis Results:
+========================
+// domain: global
+void put_i(int i /*size=4, idx=0*/){
+	}
+void put_d(double d /*size=8, idx=0*/){
+	}
+int max(int a /*size=4, idx=0*/, int b /*size=4, idx=1*/){
+	}
+int max3(int a /*size=4, idx=0*/, int b /*size=4, idx=1*/, int c /*size=4, idx=2*/){
+	}
+int random(){
+	}
+double sqrt(double x /*size=8, idx=0*/){
+	}
+int fact(int n /*size=4, idx=0*/){
+	}
+void main(){
+	int r;	// size=4, idx=0
+	int i;	// size=4, idx=1
+	}
+========================
+
+Starting code execution...
+Program Output:
+===============
+0x124e07cc0/0	CALL	0x124e07aa0
+0x124e07aa0/1	ENTER	2
+0x124e07b00/4	PUSH.f	5.913
+0x124e07ac0/5	CONV.f.i	// 5.913 -> 5
+0x124e07ae0/5	CALL_EXT	0x10462b5a8
+=> 5
+0x124e07b20/4	PUSH.i	6
+0x124e07b40/5	CALL	0x124e07840
+0x124e07840/6	ENTER	0
+0x124e07860/7	FPADDR.i	-2	// 0x104634058
+0x124e07880/8	LOAD.i	// load from 0x104634058 -> 6
+0x124e078a0/8	PUSH.i	3
+0x124e078c0/9	LESS.i	// 6<3 -> 0
+0x124e078e0/8	JF	0x124e07960	// 0
+0x124e07960/7	NOP
+0x124e07980/7	FPADDR.i	-2	// 0x104634058
+0x124e079a0/8	LOAD.i	// load from 0x104634058 -> 6
+0x124e079c0/8	FPADDR.i	-2	// 0x104634058
+0x124e079e0/9	LOAD.i	// load from 0x104634058 -> 6
+0x124e07a00/9	PUSH.i	1
+0x124e07a20/10	SUB.i	// 6-1 -> 5
+0x124e07a40/9	CALL	0x124e07840
+0x124e07840/10	ENTER	0
+0x124e07860/11	FPADDR.i	-2	// 0x104634078
+0x124e07880/12	LOAD.i	// load from 0x104634078 -> 5
+0x124e078a0/12	PUSH.i	3
+0x124e078c0/13	LESS.i	// 5<3 -> 0
+0x124e078e0/12	JF	0x124e07960	// 0
+0x124e07960/11	NOP
+0x124e07980/11	FPADDR.i	-2	// 0x104634078
+0x124e079a0/12	LOAD.i	// load from 0x104634078 -> 5
+0x124e079c0/12	FPADDR.i	-2	// 0x104634078
+0x124e079e0/13	LOAD.i	// load from 0x104634078 -> 5
+0x124e07a00/13	PUSH.i	1
+0x124e07a20/14	SUB.i	// 5-1 -> 4
+0x124e07a40/13	CALL	0x124e07840
+0x124e07840/14	ENTER	0
+0x124e07860/15	FPADDR.i	-2	// 0x104634098
+0x124e07880/16	LOAD.i	// load from 0x104634098 -> 4
+0x124e078a0/16	PUSH.i	3
+0x124e078c0/17	LESS.i	// 4<3 -> 0
+0x124e078e0/16	JF	0x124e07960	// 0
+0x124e07960/15	NOP
+0x124e07980/15	FPADDR.i	-2	// 0x104634098
+0x124e079a0/16	LOAD.i	// load from 0x104634098 -> 4
+0x124e079c0/16	FPADDR.i	-2	// 0x104634098
+0x124e079e0/17	LOAD.i	// load from 0x104634098 -> 4
+0x124e07a00/17	PUSH.i	1
+0x124e07a20/18	SUB.i	// 4-1 -> 3
+0x124e07a40/17	CALL	0x124e07840
+0x124e07840/18	ENTER	0
+0x124e07860/19	FPADDR.i	-2	// 0x1046340b8
+0x124e07880/20	LOAD.i	// load from 0x1046340b8 -> 3
+0x124e078a0/20	PUSH.i	3
+0x124e078c0/21	LESS.i	// 3<3 -> 0
+0x124e078e0/20	JF	0x124e07960	// 0
+0x124e07960/19	NOP
+0x124e07980/19	FPADDR.i	-2	// 0x1046340b8
+0x124e079a0/20	LOAD.i	// load from 0x1046340b8 -> 3
+0x124e079c0/20	FPADDR.i	-2	// 0x1046340b8
+0x124e079e0/21	LOAD.i	// load from 0x1046340b8 -> 3
+0x124e07a00/21	PUSH.i	1
+0x124e07a20/22	SUB.i	// 3-1 -> 2
+0x124e07a40/21	CALL	0x124e07840
+0x124e07840/22	ENTER	0
+0x124e07860/23	FPADDR.i	-2	// 0x1046340d8
+0x124e07880/24	LOAD.i	// load from 0x1046340d8 -> 2
+0x124e078a0/24	PUSH.i	3
+0x124e078c0/25	LESS.i	// 2<3 -> 1
+0x124e078e0/24	JF	0x124e07960	// 1
+0x124e07900/23	FPADDR.i	-2	// 0x1046340d8
+0x124e07920/24	LOAD.i	// load from 0x1046340d8 -> 2
+0x124e07940/24	RET	1	// return value: i:2, f:2.122e-314
+0x124e07a60/21	MUL.i	// 3*2 -> 6
+0x124e07a80/20	RET	1	// return value: i:6, f:2.122e-314
+0x124e07a60/17	MUL.i	// 4*6 -> 24
+0x124e07a80/16	RET	1	// return value: i:24, f:2.122e-314
+0x124e07a60/13	MUL.i	// 5*24 -> 120
+0x124e07a80/12	RET	1	// return value: i:120, f:2.122e-314
+0x124e07a60/9	MUL.i	// 6*120 -> 720
+0x124e07a80/8	RET	1	// return value: i:720, f:2.122e-314
+0x124e07b60/5	CALL_EXT	0x10462b5a8
+=> 720
+0x124e07c40/4	FPADDR.i	1	// 0x104634048
+0x124e07c60/5	PUSH.i	1
+0x124e07c80/6	STORE.i	// store 1 to 0x104634048
+0x124e07ca0/5	DROP	// dropped i:1, f:2.122e-314
+0x124e07d80/4	FPADDR.i	2	// 0x104634050
+0x124e07da0/5	PUSH.i	2
+0x124e07dc0/6	STORE.i	// store 2 to 0x104634050
+0x124e07de0/5	DROP	// dropped i:2, f:2.122e-314
+0x124e07e00/4	FPADDR.i	2	// 0x104634050
+0x124e07e20/5	LOAD.i	// load from 0x104634050 -> 2
+0x124e07e40/5	PUSH.i	5
+0x124e07e60/6	LESS.i	// 2<5 -> 1
+0x124e07e80/5	JF	0x124e080b0	// 1
+0x124e07eb0/4	FPADDR.i	1	// 0x104634048
+0x124e07ed0/5	FPADDR.i	1	// 0x104634048
+0x124e07ef0/6	LOAD.i	// load from 0x104634048 -> 1
+0x124e07f10/6	FPADDR.i	2	// 0x104634050
+0x124e07f30/7	LOAD.i	// load from 0x104634050 -> 2
+0x124e07f50/7	MUL.i	// 1*2 -> 2
+0x124e07f70/6	STORE.i	// store 2 to 0x104634048
+0x124e07f90/5	DROP	// dropped i:2, f:2.122e-314
+0x124e07fb0/4	FPADDR.i	2	// 0x104634050
+0x124e07fd0/5	FPADDR.i	2	// 0x104634050
+0x124e07ff0/6	LOAD.i	// load from 0x104634050 -> 2
+0x124e08010/6	PUSH.i	1
+0x124e08030/7	ADD.i	// 2+1 -> 3
+0x124e08050/6	STORE.i	// store 3 to 0x104634050
+0x124e08070/5	DROP	// dropped i:3, f:2.122e-314
+0x124e08090/4	JMP	0x124e07e00
+0x124e07e00/4	FPADDR.i	2	// 0x104634050
+0x124e07e20/5	LOAD.i	// load from 0x104634050 -> 3
+0x124e07e40/5	PUSH.i	5
+0x124e07e60/6	LESS.i	// 3<5 -> 1
+0x124e07e80/5	JF	0x124e080b0	// 1
+0x124e07eb0/4	FPADDR.i	1	// 0x104634048
+0x124e07ed0/5	FPADDR.i	1	// 0x104634048
+0x124e07ef0/6	LOAD.i	// load from 0x104634048 -> 2
+0x124e07f10/6	FPADDR.i	2	// 0x104634050
+0x124e07f30/7	LOAD.i	// load from 0x104634050 -> 3
+0x124e07f50/7	MUL.i	// 2*3 -> 6
+0x124e07f70/6	STORE.i	// store 6 to 0x104634048
+0x124e07f90/5	DROP	// dropped i:6, f:2.122e-314
+0x124e07fb0/4	FPADDR.i	2	// 0x104634050
+0x124e07fd0/5	FPADDR.i	2	// 0x104634050
+0x124e07ff0/6	LOAD.i	// load from 0x104634050 -> 3
+0x124e08010/6	PUSH.i	1
+0x124e08030/7	ADD.i	// 3+1 -> 4
+0x124e08050/6	STORE.i	// store 4 to 0x104634050
+0x124e08070/5	DROP	// dropped i:4, f:2.122e-314
+0x124e08090/4	JMP	0x124e07e00
+0x124e07e00/4	FPADDR.i	2	// 0x104634050
+0x124e07e20/5	LOAD.i	// load from 0x104634050 -> 4
+0x124e07e40/5	PUSH.i	5
+0x124e07e60/6	LESS.i	// 4<5 -> 1
+0x124e07e80/5	JF	0x124e080b0	// 1
+0x124e07eb0/4	FPADDR.i	1	// 0x104634048
+0x124e07ed0/5	FPADDR.i	1	// 0x104634048
+0x124e07ef0/6	LOAD.i	// load from 0x104634048 -> 6
+0x124e07f10/6	FPADDR.i	2	// 0x104634050
+0x124e07f30/7	LOAD.i	// load from 0x104634050 -> 4
+0x124e07f50/7	MUL.i	// 6*4 -> 24
+0x124e07f70/6	STORE.i	// store 24 to 0x104634048
+0x124e07f90/5	DROP	// dropped i:24, f:2.122e-314
+0x124e07fb0/4	FPADDR.i	2	// 0x104634050
+0x124e07fd0/5	FPADDR.i	2	// 0x104634050
+0x124e07ff0/6	LOAD.i	// load from 0x104634050 -> 4
+0x124e08010/6	PUSH.i	1
+0x124e08030/7	ADD.i	// 4+1 -> 5
+0x124e08050/6	STORE.i	// store 5 to 0x104634050
+0x124e08070/5	DROP	// dropped i:5, f:2.122e-314
+0x124e08090/4	JMP	0x124e07e00
+0x124e07e00/4	FPADDR.i	2	// 0x104634050
+0x124e07e20/5	LOAD.i	// load from 0x104634050 -> 5
+0x124e07e40/5	PUSH.i	5
+0x124e07e60/6	LESS.i	// 5<5 -> 0
+0x124e07e80/5	JF	0x124e080b0	// 0
+0x124e080b0/4	NOP
+0x124e08110/4	FPADDR.i	1	// 0x104634048
+0x124e080d0/5	LOAD.i	// load from 0x104634048 -> 24
+0x124e080f0/5	CALL_EXT	0x10462b5a8
+=> 24
+0x124e08130/4	RET_VOID	0
+0x124e07ce0/0	HALT===============
+Code execution completed.
+
+Extracted Results from Generated Code:
+  Result 1: 5
+  Result 2: 720
+  Result 3: 24
+Compilation successful!
+=== Code generation tests completed ===

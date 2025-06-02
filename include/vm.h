@@ -68,7 +68,6 @@ typedef enum
 	,
 	OP_CONV_F_I // converts double to int
 	,
-	// --- New instructions for code generation ---
 	OP_MUL_I // multiplies 2 int values from stack and puts the result on stack
 	,
 	OP_MUL_F // multiplies 2 double values from stack and puts the result on stack
@@ -159,3 +158,6 @@ Instr *genTest2();
 Instr *genTest3();
 Instr *genTest4();
 Instr *genTest5();
+
+void reset_results();
+void print_collected_results();

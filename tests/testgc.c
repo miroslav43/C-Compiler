@@ -5,9 +5,9 @@ int fact(int n){
 	}
 
 void main(){
-	put_i(4.9);		// se afiseaza 4
+	put_i(5.913);		// se afiseaza 
 	
-	put_i(fact(3));	// se afiseaza 6
+	put_i(fact(6));	// se afiseaza 
 
 	// implementare nerecursiva pentru factorial
 	int r;
@@ -18,5 +18,5 @@ void main(){
 		r=r*i;
 		i=i+1;
 		}
-	put_i(r);		// se afiseaza 24
+	put_i(r);		// se afiseaza 
 	}

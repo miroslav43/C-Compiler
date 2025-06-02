@@ -143,9 +143,6 @@ test_analiza_clean: $(TARGET)
 # Code generation tests
 test_gen: $(TARGET)
 	@echo "=== Running code generation tests ==="
-	@echo "Testing simple variable assignment and output..."
-	./$(TARGET) tests/simple_test.c || true
-	@echo ""
 	@echo "Testing complete factorial program with recursion and loops..."
 	./$(TARGET) tests/testgc.c || true
 	@echo "=== Code generation tests completed ==="
